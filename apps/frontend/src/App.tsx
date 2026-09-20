@@ -18,11 +18,23 @@ function MainShell() {
   const [tab, setTab] = useState<MainTab>("buddies");
 
   return (
-    <div className="app-shell">
-      <header className="app-header">
-        <h1>{t("app_name")}</h1>
+    <div className="app-shell classic">
+      {/* Decorative window chrome, in the spirit of the classic desktop
+          messenger era — not real OS window controls, just the look. */}
+      <div className="title-bar">
+        <span className="title-bar-text">{t("app_name")}</span>
+        <span className="title-bar-controls" aria-hidden="true">
+          <span>—</span>
+          <span>▢</span>
+          <span>×</span>
+        </span>
+      </div>
+      <div className="menu-bar">
+        <span>{t("tabs.buddies")}</span>
+        <span>{t("tabs.rooms")}</span>
+        <span className="menu-bar-spacer" />
         <LanguageSwitcher />
-      </header>
+      </div>
       <StatusBar />
       <nav className="main-tabs">
         <button type="button" className={tab === "buddies" ? "active" : ""} onClick={() => setTab("buddies")}>

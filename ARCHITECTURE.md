@@ -96,18 +96,24 @@ apps/frontend     React + Vite web client.
   nudge button), `PresenceDot`, `NudgeToast` (a self-dismissing toast with a
   brief shake animation — the spiritual descendant of the classic
   window-shake buzz).
-- `src/styles.css`: dark glassmorphism visual system (blurred glass panels,
-  blue/cyan neon gradient accents, glowing presence dots) — an original
-  design, not a copy of any product's actual logo or brand assets. Replaced
-  PHASE 4's lighter violet theme after user feedback that it looked too
-  plain; Vazirmatn (Persian) + Inter (Latin) loaded via Google Fonts in
-  `index.html`.
+- `src/styles.css`: light "Classic Mode" visual system — a modernized skin
+  of a classic desktop messenger window (gradient title bar with decorative
+  window controls, a menu bar, a light lavender/white palette) — an
+  original design, not a copy of any product's actual logo or brand
+  assets. Went through three visual iterations in this session: PHASE 4's
+  violet theme (too plain per user feedback) → a dark glassmorphism/neon
+  theme (the user's next explicit choice) → this light classic-window skin
+  (the user's final explicit choice, matching a reference image of a
+  Yahoo-Messenger-style "Classic Mode" window they shared). `App.tsx`'s
+  `.title-bar`/`.menu-bar` are decorative chrome only (no real window
+  behavior — a stylistic homage, not a functional claim). Vazirmatn
+  (Persian) + Inter (Latin) loaded via Google Fonts in `index.html`.
 - `src/components/Avatar.tsx`: an initials avatar with a deterministic
   per-username gradient (no image upload exists yet — see
-  `RISK_REGISTER.md`), used in the buddy list, friend requests, chat
-  messages, the status bar, and the call overlay. A small `.badge-dot`
-  overlay reuses `PresenceDot` at the avatar's corner instead of a
-  separate inline dot.
+  `RISK_REGISTER.md`). Used for the viewer's own profile row and per-sender
+  in chat messages; deliberately **not** used in the buddy/room lists,
+  which use an inline status dot instead (`PresenceDot`/`.room-dot`) to
+  match the reference image's classic buddy-list look.
 - `src/components/Icon.tsx`: a small hand-picked set of inline SVG icons
   (phone, video, bell, send, logout, back, check, close, add) — not an
   icon-font dependency, keeping bundle size down. Replaced emoji buttons

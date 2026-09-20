@@ -2,10 +2,10 @@ import { useTranslation } from "react-i18next";
 import type { PresenceState } from "../api/types.js";
 
 const COLOR_BY_STATE: Record<PresenceState, string> = {
-  online: "#22c55e",
-  away: "#eab308",
-  busy: "#f43f5e",
-  offline: "#5f6b8a",
+  online: "#2fbf4f",
+  away: "#e0a800",
+  busy: "#d9364a",
+  offline: "#9a94b8",
 };
 
 export function PresenceDot({ state }: { state: PresenceState }) {
@@ -17,12 +17,11 @@ export function PresenceDot({ state }: { state: PresenceState }) {
       aria-label={t(`presence.${state}`)}
       style={{
         display: "inline-block",
-        width: 10,
-        height: 10,
+        width: 9,
+        height: 9,
         borderRadius: "50%",
         background: color,
-        boxShadow: state === "offline" ? "none" : `0 0 8px ${color}`,
-        marginInlineEnd: 6,
+        marginInlineEnd: 8,
         flexShrink: 0,
       }}
     />

@@ -6,7 +6,6 @@ import { useCall } from "../call/CallContext.js";
 import { api, ApiError } from "../api/client.js";
 import type { Friend, FriendRequest } from "../api/types.js";
 import { PresenceDot } from "./PresenceDot.js";
-import { Avatar } from "./Avatar.js";
 import { Icon } from "./Icon.js";
 
 export function BuddyList() {
@@ -90,7 +89,6 @@ export function BuddyList() {
           <ul className="friend-requests">
             {requests.map((r) => (
               <li key={r.id}>
-                <Avatar name={r.requester.username} size={30} />
                 <span>{r.requester.username}</span>
                 <button type="button" className="icon-button accept" onClick={() => handleAccept(r.id)} title={t("accept")}>
                   <Icon name="check" />
@@ -104,19 +102,18 @@ export function BuddyList() {
         </section>
       )}
 
+      <div className="buddy-group-header">
+        {t("title")} ({friendsWithLivePresence.length})
+      </div>
       <ul className="buddy-entries">
         {friendsWithLivePresence.map((f) => (
-          <li key={f.friendshipId} className="buddy-entry">
-            <span className="avatar-badge">
-              <Avatar name={f.username} />
-              <span className="badge-dot">
-                <PresenceDot state={f.presence} />
-              </span>
-            </span>
+          <li key={f.friendshipId} className="buddy-entry classic-row">
+            <PresenceDot state={f.presence} />
             <div className="buddy-info">
               <span className="buddy-name">{f.username}</span>
               {f.statusMessage && <span className="buddy-status">{f.statusMessage}</span>}
             </div>
+            <span className="buddy-presence-label">{t(`presence.${f.presence}`)}</span>
             <button
               type="button"
               className="nudge-button"

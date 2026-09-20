@@ -5,7 +5,6 @@ import { useAuth } from "../auth/AuthContext.js";
 import { api, ApiError } from "../api/client.js";
 import type { Room } from "../api/types.js";
 import { ChatRoom } from "./ChatRoom.js";
-import { Avatar } from "./Avatar.js";
 import { Icon } from "./Icon.js";
 
 type Tab = "mine" | "lobby";
@@ -86,15 +85,20 @@ export function RoomsPanel() {
       {error && <p className="form-error">{error}</p>}
 
       {tab === "mine" && (
-        <ul className="room-list">
-          {myRooms.map((room) => (
-            <li key={room.id} onClick={() => setSelectedRoom(room)}>
-              <Avatar name={room.name} size={32} />
-              <span className="room-name">{room.name}</span>
-            </li>
-          ))}
-          {myRooms.length === 0 && <li className="empty-state">{t("no_rooms")}</li>}
-        </ul>
+        <>
+          <div className="buddy-group-header">
+            {t("my_rooms")} ({myRooms.length})
+          </div>
+          <ul className="room-list">
+            {myRooms.map((room) => (
+              <li key={room.id} className="classic-row" onClick={() => setSelectedRoom(room)}>
+                <span className="room-dot" />
+                <span className="room-name">{room.name}</span>
+              </li>
+            ))}
+            {myRooms.length === 0 && <li className="empty-state">{t("no_rooms")}</li>}
+          </ul>
+        </>
       )}
 
       {tab === "lobby" && (
@@ -109,8 +113,8 @@ export function RoomsPanel() {
           </select>
           <ul className="room-list">
             {publicRooms.map((room) => (
-              <li key={room.id}>
-                <Avatar name={room.name} size={32} />
+              <li key={room.id} className="classic-row">
+                <span className="room-dot" />
                 <div className="room-info">
                   <span className="room-name">{room.name}</span>
                   <span className="room-meta">
