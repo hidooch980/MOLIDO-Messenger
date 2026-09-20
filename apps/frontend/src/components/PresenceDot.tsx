@@ -2,14 +2,15 @@ import { useTranslation } from "react-i18next";
 import type { PresenceState } from "../api/types.js";
 
 const COLOR_BY_STATE: Record<PresenceState, string> = {
-  online: "#2fbf4f",
-  away: "#e0a800",
-  busy: "#d9363e",
-  offline: "#9aa0a6",
+  online: "#22c55e",
+  away: "#eab308",
+  busy: "#f43f5e",
+  offline: "#5f6b8a",
 };
 
 export function PresenceDot({ state }: { state: PresenceState }) {
   const { t } = useTranslation("friends");
+  const color = COLOR_BY_STATE[state];
   return (
     <span
       title={t(`presence.${state}`)}
@@ -19,7 +20,8 @@ export function PresenceDot({ state }: { state: PresenceState }) {
         width: 10,
         height: 10,
         borderRadius: "50%",
-        background: COLOR_BY_STATE[state],
+        background: color,
+        boxShadow: state === "offline" ? "none" : `0 0 8px ${color}`,
         marginInlineEnd: 6,
         flexShrink: 0,
       }}

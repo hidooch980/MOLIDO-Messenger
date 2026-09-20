@@ -96,9 +96,12 @@ apps/frontend     React + Vite web client.
   nudge button), `PresenceDot`, `NudgeToast` (a self-dismissing toast with a
   brief shake animation — the spiritual descendant of the classic
   window-shake buzz).
-- `src/styles.css`: a stylistic homage to the era's messenger look (violet
-  gradient title bar, rounded panel, compact buddy rows) — an original
-  design, not a copy of any product's actual logo or brand assets.
+- `src/styles.css`: dark glassmorphism visual system (blurred glass panels,
+  blue/cyan neon gradient accents, glowing presence dots) — an original
+  design, not a copy of any product's actual logo or brand assets. Replaced
+  PHASE 4's lighter violet theme after user feedback that it looked too
+  plain; Vazirmatn (Persian) + Inter (Latin) loaded via Google Fonts in
+  `index.html`.
 - `src/components/RoomsPanel.tsx`: "My rooms" / "Room lobby" tabs, a
   category filter (`ROOM_CATEGORIES` from `@molido/i18n`), create-room
   form, and join-from-lobby — the frontend counterpart to PHASE 2/2.5's
