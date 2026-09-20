@@ -1,0 +1,17 @@
+{
+  "title": "لیست دوستان",
+  "add": "افزودن دوست",
+  "add_placeholder": "نام کاربری را وارد کنید",
+  "request_sent": "درخواست دوستی ارسال شد.",
+  "requests": "درخواست‌های دوستی",
+  "accept": "پذیرفتن",
+  "decline": "رد کردن",
+  "remove": "حذف دوست",
+  "nudge": "ارسال تلنگر",
+  "nudge_received": "{name} برای شما تلنگر فرستاد!",
+  "status_placeholder": "یک پیام وضعیت تنظیم کنید",
+  "presence.online": "آنلاین",
+  "presence.away": "خارج از دسترس",
+  "presence.busy": "مشغول",
+  "presence.offline": "آفلاین"
+}

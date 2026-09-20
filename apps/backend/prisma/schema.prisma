@@ -17,14 +17,41 @@ model User {
   email            String   @unique
   passwordHash     String
   localePreference String?
+  // Yahoo-Messenger-style profile: a picture and a short free-text mood
+  // message the owner sets themselves (e.g. "brb", "in a meeting") —
+  // distinct from `presence`, which is live connection state and lives in
+  // Redis (apps/backend/src/presence/redis.ts), never in Postgres.
+  avatarUrl        String?
+  statusMessage    String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  ownedRooms Room[]       @relation("RoomOwner")
+  ownedRooms  Room[]       @relation("RoomOwner")
   memberships RoomMember[]
   messages    Message[]
 
+  sentFriendRequests     Friendship[] @relation("FriendshipRequester")
+  receivedFriendRequests Friendship[] @relation("FriendshipAddressee")
+
   @@map("users")
+}
+
+// The buddy list. `status` is a free-text code ("pending" | "accepted" |
+// "blocked") validated at the app layer — same no-DB-enum convention as
+// everywhere else in this schema.
+model Friendship {
+  id           String   @id @default(uuid())
+  requesterId  String
+  addresseeId  String
+  status       String   @default("pending")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  requester User @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee User @relation("FriendshipAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, addresseeId])
+  @@map("friendships")
 }
 
 // `category` is a free-text code validated against ROOM_CATEGORIES at the

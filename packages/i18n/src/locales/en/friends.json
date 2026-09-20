@@ -1,0 +1,17 @@
+{
+  "title": "Buddy List",
+  "add": "Add a friend",
+  "add_placeholder": "Enter a username",
+  "request_sent": "Friend request sent.",
+  "requests": "Friend requests",
+  "accept": "Accept",
+  "decline": "Decline",
+  "remove": "Remove friend",
+  "nudge": "Send a nudge",
+  "nudge_received": "{name} sent you a nudge!",
+  "status_placeholder": "Set a status message",
+  "presence.online": "Online",
+  "presence.away": "Away",
+  "presence.busy": "Busy",
+  "presence.offline": "Offline"
+}

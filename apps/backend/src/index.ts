@@ -8,8 +8,11 @@ import { localeMiddleware } from "./i18n/middleware.js";
 import { localizedErrorHandler } from "./i18n/error-handler.js";
 import { authRouter } from "./modules/auth/routes.js";
 import { roomsRouter } from "./modules/rooms/routes.js";
+import { friendsRouter, profileRouter } from "./modules/friends/routes.js";
 import { verifyToken, type AuthTokenPayload } from "./modules/auth/service.js";
 import { requireMembership, postMessage } from "./modules/rooms/service.js";
+import { listFriendUserIds, areFriends } from "./modules/friends/service.js";
+import { registerConnection, removeConnection, setManualState, isManualPresenceState } from "./presence/service.js";
 
 const app = express();
 app.use(helmet());
@@ -36,6 +39,8 @@ app.get("/api/i18n/error-demo/:code", (req, res, next) => {
 
 app.use("/api/auth", authRouter);
 app.use("/api/rooms", roomsRouter);
+app.use("/api/friends", friendsRouter);
+app.use("/api/me", profileRouter);
 
 app.use(localizedErrorHandler());
 
@@ -58,8 +63,53 @@ io.use((socket, next) => {
   }
 });
 
+/** Every user has a personal room, so any server instance can address them directly by id. */
+function personalRoom(userId: string) {
+  return `user:${userId}`;
+}
+
+async function broadcastPresence(io: SocketIOServer, userId: string, state: string) {
+  const friendIds = await listFriendUserIds(userId);
+  for (const friendId of friendIds) {
+    io.to(personalRoom(friendId)).emit("presence:update", { userId, state });
+  }
+}
+
 io.on("connection", (socket) => {
   const auth = socket.data.auth as AuthTokenPayload;
+  socket.join(personalRoom(auth.sub));
+
+  registerConnection(auth.sub, socket.id).then((wentOnline) => {
+    if (wentOnline) void broadcastPresence(io, auth.sub, "online");
+  });
+
+  socket.on("disconnect", () => {
+    removeConnection(auth.sub, socket.id).then((wentOffline) => {
+      if (wentOffline) void broadcastPresence(io, auth.sub, "offline");
+    });
+  });
+
+  socket.on("presence:set", async (state: string, ack?: (error?: string) => void) => {
+    if (!isManualPresenceState(state)) {
+      ack?.("VALIDATION_FAILED");
+      return;
+    }
+    await setManualState(auth.sub, state);
+    await broadcastPresence(io, auth.sub, state);
+    ack?.();
+  });
+
+  // Yahoo Messenger's "buzz" — only deliverable between accepted friends.
+  socket.on("friend:nudge", async (toUserId: string, ack?: (error?: string) => void) => {
+    try {
+      const isFriend = await areFriends(auth.sub, toUserId);
+      if (!isFriend) throw new LocalizedError("FRIEND_FORBIDDEN");
+      io.to(personalRoom(toUserId)).emit("friend:nudge", { fromUserId: auth.sub, fromUsername: auth.username });
+      ack?.();
+    } catch (err) {
+      ack?.(err instanceof LocalizedError ? err.code : "UNKNOWN_ERROR");
+    }
+  });
 
   socket.on("chat:join", async (roomId: string, ack?: (error?: string) => void) => {
     try {

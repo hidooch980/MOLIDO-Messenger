@@ -19,7 +19,7 @@ export function localizedErrorHandler() {
 }
 
 function statusForCode(code: string): number {
-  if (code === "AUTH_USERNAME_TAKEN" || code === "AUTH_EMAIL_TAKEN") return 409;
+  if (code.endsWith("_TAKEN") || code.endsWith("_EXISTS")) return 409;
   if (code.startsWith("AUTH_")) return 401;
   if (code === "RATE_LIMITED") return 429;
   if (code.endsWith("_FORBIDDEN")) return 403;

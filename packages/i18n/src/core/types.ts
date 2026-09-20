@@ -30,6 +30,7 @@ export type LocaleNamespace =
   | "auth"
   | "chat"
   | "groups"
+  | "friends"
   | "settings"
   | "errors"
   | "notifications"
@@ -41,6 +42,7 @@ export const LOCALE_NAMESPACES: LocaleNamespace[] = [
   "auth",
   "chat",
   "groups",
+  "friends",
   "settings",
   "errors",
   "notifications",

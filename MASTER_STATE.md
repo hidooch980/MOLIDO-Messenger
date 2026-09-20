@@ -1,6 +1,6 @@
 # Master State
 
-Last updated: 2026-09-20 (PHASE 2)
+Last updated: 2026-09-20 (PHASE 3)
 
 ## Status legend
 
@@ -31,7 +31,7 @@ VERIFIED / OBSERVED / INFERRED / UNKNOWN / BLOCKED — see project conventions.
 | Refresh tokens / logout / revocation | NOT STARTED | Current tokens are 7-day JWTs with no revocation list — acceptable for PHASE 1, a gap before production. |
 | Confusable-username protection | NOT STARTED | Registration currently restricts usernames to ASCII alphanumeric/underscore, which sidesteps (does not solve) spec section 23's cross-script lookalike concern. |
 
-## PHASE 2 — Rooms & realtime text chat — IN PROGRESS
+## PHASE 2 — Rooms & realtime text chat — LOCKED
 
 | Area | Status | Notes |
 |---|---|---|
@@ -44,7 +44,24 @@ VERIFIED / OBSERVED / INFERRED / UNKNOWN / BLOCKED — see project conventions.
 | System join/leave events persisted as codes | VERIFIED (code) | `systemEventCode`/`systemEventName` columns, not a rendered sentence; not yet live-pushed over the socket — see `RISK_REGISTER.md`. |
 | Message edit/delete | NOT STARTED | Schema has the columns; no routes yet. |
 | Public room lobby (Yahoo-style categories) | VERIFIED (live smoke test) | `Room.category`/`Room.isPublic` + `GET /api/rooms/public?category=`. Verified: a public "sports" room appeared filtered and unfiltered; a private room did not appear in either listing; joining the private room by id was rejected with `GROUP_FORBIDDEN`; member count went 1→2 live after a join. Category names translated fa/en via `groups.category.*`. |
-| Redis (presence/pub-sub) | NOT STARTED | Still not needed at single-instance scale. |
+## PHASE 3 — Buddy list, presence, and nudge (Yahoo-nostalgia features) — IN PROGRESS
+
+| Area | Status | Notes |
+|---|---|---|
+| Redis provisioned | VERIFIED (local dev only) | Local `redis-server` 7.0.15; **not** provisioned for any deployed environment yet. |
+| `Friendship` model + migration | VERIFIED | Free-text `status` (`pending`/`accepted`), same no-DB-enum convention as the rest of the schema. |
+| `User.avatarUrl`/`statusMessage` | VERIFIED | Migration `20260920133508_friendships_and_profile`. |
+| Friend request / accept / decline / remove (REST) | VERIFIED (live smoke test) | Sending a duplicate request correctly returned `FRIEND_REQUEST_EXISTS` (409 — a real bug found and fixed this session: it was falling through to 500 before `statusForCode` learned the `_EXISTS`/`_TAKEN` suffix pattern). |
+| Buddy list with live presence (REST) | VERIFIED (live smoke test) | `GET /api/friends` correctly showed a friend as "offline" before they connected, "online" after, and "away" after they set it — each read hit Redis live, not a cached value. |
+| Presence service (Redis) | VERIFIED (live smoke test) | `registerConnection`/`removeConnection` via `SADD`/`SREM`/`SCARD` on a per-user socket-id set; "offline" is always derived (empty set), never itself stored, so a crashed process can't strand a user "online". |
+| Live presence broadcast to friends only | VERIFIED (live smoke test) | A connecting/disconnecting/away-setting user's `presence:update` was only ever observed by their accepted friend, via a personal Socket.IO room (`user:<id>`) — not broadcast globally. |
+| Nudge ("buzz") | VERIFIED (live smoke test) | Delivered only between accepted friends (`areFriends()` gate); received live by the target's socket with sender identity. |
+| Avatar/status message UI | NOT STARTED | Backend fields (`PATCH /api/me`) exist; no frontend surface yet. |
+| Redis pub/sub across multiple backend instances | NOT STARTED | A single process is the only one broadcasting today. |
+| Message edit/delete | NOT STARTED | Schema has the columns; no routes yet. |
+| Invite mechanism for private rooms | NOT STARTED | |
+| Classic Yahoo Messenger visual theme | NOT STARTED | Frontend is still an unstyled React shell. |
+| Offline-message "you have new messages" push | NOT STARTED | Messages already persist and are visible on next history fetch — no separate notification exists yet. |
 | WebRTC/SFU (voice/video) | NOT STARTED | Explicitly deferred; see `ARCHITECTURE.md`. |
 | Admin panel | NOT STARTED | |
 | Revenue | NOT STARTED, disabled-by-default is the design intent | `REVENUE_ENABLED=false` present in `.env.example`; no gating logic reads it yet. |
@@ -52,20 +69,23 @@ VERIFIED / OBSERVED / INFERRED / UNKNOWN / BLOCKED — see project conventions.
 
 ## Regression baseline
 
-fa/RTL and en/LTR: verified via `i18n:validate` (key/placeholder parity)
-plus every PHASE 1 and PHASE 2 live smoke test above, including a live
-mixed-direction chat message. No automated UI regression suite exists yet
+fa/RTL and en/LTR: verified via `i18n:validate` (key/placeholder parity,
+now across 10 namespaces including the new `friends` one) plus every PHASE
+1–3 live smoke test above. No automated UI regression suite exists yet
 (tracked in `RISK_REGISTER.md`).
 
-## Immediate next steps (candidate PHASE 3)
+## Immediate next steps (candidate PHASE 4)
 
-1. Push system join/leave events live over the socket, not just on next
+1. Build the frontend buddy-list UI (presence dots, status message, nudge
+   button, request inbox) — the backend is fully verified but has no visual
+   surface yet.
+2. Apply a classic-Yahoo-inspired visual theme to the frontend shell.
+3. Push system join/leave events live over the socket, not just on next
    history fetch.
-2. Add message edit/delete routes using the existing `editedAt`/`deletedAt`
+4. Add message edit/delete routes using the existing `editedAt`/`deletedAt`
    columns and `chat.system.MESSAGE_EDITED`/`MESSAGE_DELETED` keys.
-3. Design an invite mechanism for private rooms (currently joinable only by
-   an existing member's/owner's action — no invite link/code exists).
-4. Add refresh-token/logout/session-revocation before any production use.
-5. Provision PostgreSQL for a real deployed environment (still only a local
-   dev cluster) and wire `DATABASE_URL` via secrets, not a committed file.
-6. Push and confirm the GitHub Actions `i18n-validate` job is green on CI.
+5. Design an invite mechanism for private rooms.
+6. Add refresh-token/logout/session-revocation before any production use.
+7. Provision PostgreSQL + Redis for a real deployed environment (still only
+   local dev instances) and wire secrets, not committed files.
+8. Push and confirm the GitHub Actions `i18n-validate` job is green on CI.

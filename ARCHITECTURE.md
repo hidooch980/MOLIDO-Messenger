@@ -1,7 +1,8 @@
 # Architecture
 
-Status: PHASE 2 — text chat is functional end-to-end against a local dev
-database. Nothing below is deployed to a real environment.
+Status: PHASE 3 — rooms, buddy list, and live presence are functional
+end-to-end against local dev PostgreSQL + Redis. Nothing below is deployed
+to a real environment.
 
 ## Overview
 
@@ -22,10 +23,11 @@ apps/frontend     React + Vite web client.
   query/account/`Accept-Language` per the order in `I18N_ARCHITECTURE.md`.
 - `src/i18n/error-handler.ts` maps thrown `LocalizedError`s to a stable JSON
   error shape `{ code, params, locale }` — never a pre-rendered sentence.
-- PostgreSQL via Prisma (`apps/backend/prisma/schema.prisma`) — `User`,
-  `Room`, `RoomMember`, `Message`. Bcrypt password hashing and JWT-based
-  sessions (`src/modules/auth`). Verified against a local dev cluster only;
-  not yet provisioned for a deployed environment — see `RISK_REGISTER.md`.
+- PostgreSQL via Prisma (`apps/backend/prisma/schema.prisma`) — `User`
+  (now with `avatarUrl`/`statusMessage`), `Room`, `RoomMember`, `Message`,
+  `Friendship`. Bcrypt password hashing and JWT-based sessions
+  (`src/modules/auth`). Verified against a local dev cluster only; not yet
+  provisioned for a deployed environment — see `RISK_REGISTER.md`.
 - `src/modules/rooms`: create/list rooms, join/leave (REST), message
   history (REST, paginated by `before`/`limit`). A message's `body` is
   stored exactly as typed — no translation or normalization on write (spec
@@ -49,7 +51,25 @@ apps/frontend     React + Vite web client.
   not yet pushed live over the socket — a deliberate PHASE 2 scope cut (see
   `RISK_REGISTER.md`): a client sees them on its next history fetch, not
   instantly.
-- Redis (presence/pub-sub) is still not wired up.
+- `src/modules/friends`: Yahoo-style buddy list. `Friendship` is a
+  free-text-status (`pending`/`accepted`) request/accept flow —
+  `POST/GET /api/friends/requests`, `POST /api/friends/requests/:id/accept|decline`,
+  `GET /api/friends` (accepted friends merged with live presence),
+  `DELETE /api/friends/:id`. `PATCH /api/me` sets `avatarUrl`/`statusMessage`.
+- `src/presence` (Redis, via `ioredis`): live online/away/busy/offline state.
+  A user's active socket ids live in a Redis Set
+  (`presence:sockets:<userId>`); "offline" is always derived from that set
+  being empty, never stored — so a crashed process can't leave a user stuck
+  "online" forever. A manual state (`presence:state:<userId>`) holds
+  online/away/busy while at least one socket is connected. `getStates()`
+  batches lookups via a Redis pipeline for the buddy-list endpoint.
+- Realtime presence + nudge: every socket joins a personal room
+  (`user:<id>`) on connect, so any backend instance can address a specific
+  user directly. On first connect / last disconnect, `presence:update` is
+  broadcast to the user's accepted friends only (`listFriendUserIds()`).
+  `presence:set` lets a client manually switch online/away/busy.
+  `friend:nudge` (Yahoo's "buzz") is gated by `areFriends()` — delivered
+  only between accepted friends, straight to the target's personal room.
 
 ## Frontend (`apps/frontend`)
 
@@ -70,8 +90,12 @@ work, not a half-built feature in this PHASE 0 commit.
   avoids reinventing presence/room primitives for an MVP.
 - mediasoup (planned): self-hostable SFU, avoids per-minute vendor costs of
   managed WebRTC platforms for a Paltalk-style multi-party room.
-- PostgreSQL (planned): relational integrity for accounts/rooms/messages;
-  Redis (planned): presence and pub/sub across backend instances.
+- PostgreSQL: relational integrity for accounts/rooms/messages/friendships.
+  Redis: live presence state — chosen over storing "online/offline" in
+  Postgres because it's ephemeral, per-connection state that must vanish
+  automatically (via `SREM`+`SCARD`, no TTL polling needed) rather than be
+  durably persisted; a natural fit for a future multi-instance pub/sub
+  layer too, which Postgres isn't.
 
 ## Explicitly deferred to later phases
 
@@ -79,6 +103,14 @@ work, not a half-built feature in this PHASE 0 commit.
   on next history fetch).
 - Message edit/delete endpoints (schema has `editedAt`/`deletedAt`; no
   routes yet).
+- Invite mechanism for private rooms.
+- Classic-Yahoo visual theme for the frontend (color scheme, emoticon icons,
+  a "beep" doorbell sound) — currently a plain, unstyled React shell.
+- Offline message notification (messages already persist and are fetched on
+  next history call — a returning user simply sees them; there is no
+  separate "you have new messages" push yet).
+- Redis pub/sub across multiple backend instances — a single process is
+  the only one broadcasting today; horizontal scaling needs this.
 - Refresh tokens, logout, and session revocation.
 - WebRTC/SFU integration.
 - Push notification delivery pipeline.
