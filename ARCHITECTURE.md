@@ -33,6 +33,17 @@ apps/frontend     React + Vite web client.
   history (REST, paginated by `before`/`limit`). A message's `body` is
   stored exactly as typed — no translation or normalization on write (spec
   section 8).
+- Message edit/delete (PHASE 9): `PATCH`/`DELETE /api/rooms/:roomId/messages/:messageId`.
+  Both re-check `senderId === userId` server-side via a shared
+  `requireOwnEditableMessage()` (never trusting the UI to have hidden the
+  buttons) and reject a system-event row or an already-deleted message with
+  `MESSAGE_NOT_FOUND`. Delete is a soft delete — `body` is cleared and
+  `deletedAt` set, but the row (and its position in history) is kept, so
+  every client renders `chat.system.MESSAGE_DELETED` in its place rather
+  than the list silently shrinking. Both broadcast a `chat:message:updated`
+  socket event to the room via the same `realtime/io.ts` module PHASE 8
+  introduced, so every other client updates the message in place with no
+  reload.
 - Yahoo-style public room lobby: `Room.category` (free-text code from
   `ROOM_CATEGORIES`, now defined in `@molido/i18n` so backend and frontend
   share one list — same no-DB-enum pattern as `LOCALE_REGISTRY`, rendered

@@ -2,8 +2,35 @@ import { Router } from "express";
 import { LocalizedError, type SystemEventCode } from "@molido/i18n";
 import { requireAuth } from "../../i18n/require-auth.js";
 import { getIO } from "../../realtime/io.js";
-import { createRoomSchema, historyQuerySchema, publicRoomsQuerySchema } from "./schemas.js";
-import { createRoom, listMyRooms, listPublicRooms, joinRoom, leaveRoom, getHistory, postSystemMessage } from "./service.js";
+import { createRoomSchema, editMessageSchema, historyQuerySchema, publicRoomsQuerySchema } from "./schemas.js";
+import {
+  createRoom,
+  listMyRooms,
+  listPublicRooms,
+  joinRoom,
+  leaveRoom,
+  getHistory,
+  postSystemMessage,
+  editMessage,
+  deleteMessage,
+} from "./service.js";
+
+/** Pushes a live update for an already-persisted message (edit/delete) to
+ * everyone currently in the room, so no client needs to refetch history. */
+function broadcastMessageUpdate(roomId: string, message: {
+  id: string;
+  body: string | null;
+  editedAt: Date | null;
+  deletedAt: Date | null;
+}) {
+  getIO().to(roomId).emit("chat:message:updated", {
+    id: message.id,
+    roomId,
+    body: message.body,
+    editedAt: message.editedAt?.toISOString() ?? null,
+    deletedAt: message.deletedAt?.toISOString() ?? null,
+  });
+}
 
 /**
  * Persists (via `postSystemMessage`) and pushes a join/leave system event
@@ -86,6 +113,29 @@ roomsRouter.get("/:roomId/messages", async (req, res, next) => {
 
   try {
     res.json(await getHistory(req.params.roomId, req.auth!.sub, parsed.data));
+  } catch (err) {
+    next(err);
+  }
+});
+
+roomsRouter.patch("/:roomId/messages/:messageId", async (req, res, next) => {
+  const parsed = editMessageSchema.safeParse(req.body);
+  if (!parsed.success) return next(new LocalizedError("VALIDATION_FAILED"));
+
+  try {
+    const message = await editMessage(req.params.roomId, req.params.messageId, req.auth!.sub, parsed.data.body);
+    broadcastMessageUpdate(req.params.roomId, message);
+    res.json(message);
+  } catch (err) {
+    next(err);
+  }
+});
+
+roomsRouter.delete("/:roomId/messages/:messageId", async (req, res, next) => {
+  try {
+    const message = await deleteMessage(req.params.roomId, req.params.messageId, req.auth!.sub);
+    broadcastMessageUpdate(req.params.roomId, message);
+    res.status(204).end();
   } catch (err) {
     next(err);
   }

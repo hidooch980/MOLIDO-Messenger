@@ -91,6 +91,37 @@ export async function postMessage(roomId: string, senderId: string, body: string
   return message;
 }
 
+async function requireOwnEditableMessage(roomId: string, messageId: string, userId: string) {
+  await requireMembership(roomId, userId);
+  const message = await prisma.message.findUnique({ where: { id: messageId } });
+  if (!message || message.roomId !== roomId || message.systemEventCode) {
+    throw new LocalizedError("MESSAGE_NOT_FOUND");
+  }
+  if (message.deletedAt) throw new LocalizedError("MESSAGE_NOT_FOUND");
+  if (message.senderId !== userId) throw new LocalizedError("MESSAGE_FORBIDDEN");
+  return message;
+}
+
+export async function editMessage(roomId: string, messageId: string, userId: string, body: string) {
+  await requireOwnEditableMessage(roomId, messageId, userId);
+  return prisma.message.update({
+    where: { id: messageId },
+    data: { body, editedAt: new Date() },
+    include: { sender: { select: { username: true } } },
+  });
+}
+
+/** A soft delete (spec section 19): the body is cleared but the row (and
+ * its position in history) is kept, so every client renders
+ * `chat.system.MESSAGE_DELETED` in place of the original text. */
+export async function deleteMessage(roomId: string, messageId: string, userId: string) {
+  await requireOwnEditableMessage(roomId, messageId, userId);
+  return prisma.message.update({
+    where: { id: messageId },
+    data: { body: null, deletedAt: new Date() },
+  });
+}
+
 /**
  * Persists a system-generated event (spec section 19) as a code + params,
  * never a pre-rendered sentence — every client renders

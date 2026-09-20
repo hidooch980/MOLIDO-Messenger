@@ -16,6 +16,10 @@ export const sendMessageSchema = z.object({
   body: z.string().min(1).max(4000),
 });
 
+export const editMessageSchema = z.object({
+  body: z.string().min(1).max(4000),
+});
+
 export const historyQuerySchema = z.object({
   before: z.string().datetime().optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
@@ -23,5 +27,6 @@ export const historyQuerySchema = z.object({
 
 export type CreateRoomInput = z.infer<typeof createRoomSchema>;
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
+export type EditMessageInput = z.infer<typeof editMessageSchema>;
 export type HistoryQueryInput = z.infer<typeof historyQuerySchema>;
 export type PublicRoomsQueryInput = z.infer<typeof publicRoomsQuerySchema>;

@@ -70,6 +70,8 @@ export interface ChatMessage {
   systemEventCode?: string | null;
   systemEventName?: string | null;
   createdAt: string;
+  editedAt?: string | null;
+  deletedAt?: string | null;
 }
 
 export function senderNameOf(message: ChatMessage): string | undefined {

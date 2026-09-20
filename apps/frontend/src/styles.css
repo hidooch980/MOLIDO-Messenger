@@ -552,6 +552,48 @@ button.link:hover {
   font-style: italic;
 }
 
+.chat-body-deleted {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.chat-edited-marker {
+  margin-inline-start: 6px;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-style: normal;
+}
+
+.chat-message-actions {
+  display: flex;
+  gap: 2px;
+  align-self: center;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.chat-message-row:hover .chat-message-actions {
+  opacity: 1;
+}
+
+.chat-message-actions .icon-button {
+  width: 22px;
+  height: 22px;
+  color: var(--text-muted);
+}
+
+.chat-edit-form {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.chat-edit-form input {
+  font-size: 12.5px;
+  padding: 4px 8px;
+  min-width: 140px;
+}
+
 @keyframes molido-message-in {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }

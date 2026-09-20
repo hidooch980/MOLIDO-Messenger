@@ -17,6 +17,8 @@ const PATHS = {
   chat: "M4 4h16v12H7l-3 3V4z",
   person: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4.4 0-8 2-8 6h16c0-4-3.6-6-8-6z",
   search: "M11 4a7 7 0 1 0 4.2 12.6l4.6 4.6 1.4-1.4-4.6-4.6A7 7 0 0 0 11 4zm0 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10z",
+  edit: "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
+  trash: "M6 7v13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6zm3 2h2v9H9V9zm4 0h2v9h-2V9zM9 4h6l1 2H8l1-2z",
 } as const;
 
 export type IconName = keyof typeof PATHS;

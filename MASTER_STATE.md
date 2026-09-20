@@ -1,6 +1,6 @@
 # Master State
 
-Last updated: 2026-09-20 (PHASE 8)
+Last updated: 2026-09-20 (PHASE 9)
 
 ## Status legend
 
@@ -125,6 +125,16 @@ VERIFIED / OBSERVED / INFERRED / UNKNOWN / BLOCKED — see project conventions.
 | Live verification | VERIFIED (live browser test) | alice opened a room (socket `chat:join`'d); bob joined the same room via the REST lobby-join button — alice's chat view showed "bob joined" live with no reload or refetch. bob then left via a direct REST call — alice's view showed "bob left" live, as a second system message, still with no reload. |
 | Full regression after this change | VERIFIED (live browser test, fresh run) | Re-ran rooms/chat, friend request/accept, presence, nudge, and video call invite/accept/active/hang-up together with fresh users after a clean DB/Redis reset — all passed, confirming the new `realtime/io.ts` wiring didn't disturb the existing socket-event handlers in `index.ts`. |
 
+## PHASE 9 — Message edit/delete — LOCKED
+
+| Area | Status | Notes |
+|---|---|---|
+| Edit own message (REST + live) | VERIFIED (live browser test) | `PATCH /api/rooms/:roomId/messages/:messageId` — `editMessage()` in `rooms/service.ts` enforces sender ownership (`MESSAGE_FORBIDDEN`) and rejects editing an already-deleted or system-event row (`MESSAGE_NOT_FOUND`), using the existing `editedAt` column. Broadcast live to the room as `chat:message:updated`. Verified: alice edited her own message; bob's chat view updated the text live, with an "(edited)"/"(ویرایش‌شده)" marker, no reload. |
+| Soft-delete own message (REST + live) | VERIFIED (live browser test) | `DELETE /api/rooms/:roomId/messages/:messageId` clears `body` and sets `deletedAt`, keeping the row (and its place in history) rather than removing it. Verified: alice deleted her message; bob's view live-replaced it with the `chat.system.MESSAGE_DELETED` placeholder text, no reload. |
+| Ownership enforcement | VERIFIED (live browser test) | bob's chat view showed no edit/delete controls on alice's messages (frontend only renders `.chat-message-actions` for the viewer's own messages); the backend also independently re-checks `senderId === userId` regardless of what the UI shows. |
+| `apps/backend/src/realtime/io.ts` reused for edit/delete broadcast | VERIFIED (code) | Same PHASE 8 shared-`io` module; a new `broadcastMessageUpdate()` helper in `rooms/routes.ts` emits `chat:message:updated` after each successful edit/delete. |
+| Full regression after this change | VERIFIED (live browser test, fresh run) | Re-ran rooms/chat/live-join, friend request/accept, presence, nudge, and video call invite/accept/active/hang-up together with fresh users after a clean DB/Redis reset — all passed. |
+
 ## Regression baseline
 
 fa/RTL and en/LTR: verified via `i18n:validate` (key/placeholder parity,
@@ -135,16 +145,16 @@ negotiation, not just DOM/socket assertions). Each phase's fixes were
 re-verified against the *previous* phase's browser tests before being
 called done — no known regression as of this update.
 
-## Immediate next steps (candidate PHASE 9)
+## Immediate next steps (candidate PHASE 10)
 
-1. Add message edit/delete routes and UI using the existing
-   `editedAt`/`deletedAt` columns and `chat.system.MESSAGE_EDITED`/
-   `MESSAGE_DELETED` keys.
-2. Design an invite mechanism for private rooms.
-3. Add a TURN server for reliable call connectivity across restrictive NATs.
-4. Add refresh-token/logout/session-revocation before any production use.
-5. Provision PostgreSQL + Redis for a real deployed environment (still only
+1. Design an invite mechanism for private rooms.
+2. Add a TURN server for reliable call connectivity across restrictive NATs.
+3. Add refresh-token/logout/session-revocation before any production use.
+4. Provision PostgreSQL + Redis for a real deployed environment (still only
    local dev instances) and wire secrets, not committed files.
-6. Push and confirm the GitHub Actions `i18n-validate` job is green on CI.
-7. Add per-user rate limiting on `chat:message`/`friend:nudge`/call
+5. Push and confirm the GitHub Actions `i18n-validate` job is green on CI.
+6. Add per-user rate limiting on `chat:message`/`friend:nudge`/call
    signaling (RISK_REGISTER.md risks 14/18/23).
+7. `sendMessageSchema` exists but the socket `chat:message` handler doesn't
+   validate against it (`MESSAGE_TOO_LONG` is unenforced) — validate before
+   calling `postMessage()`, matching the pattern just added for edit.
