@@ -1,0 +1,20 @@
+{
+  "name": "molido-messenger",
+  "private": true,
+  "version": "0.0.0",
+  "description": "MOLIDO Messenger - multilingual real-time chat, voice and video messenger",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "i18n:validate": "node packages/i18n/scripts/validate-locales.js",
+    "dev:backend": "npm run dev --workspace=@molido/backend",
+    "dev:frontend": "npm run dev --workspace=@molido/frontend",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

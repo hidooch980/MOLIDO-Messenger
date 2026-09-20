@@ -1,0 +1,6 @@
+{
+  "new_message.one": "{name} برای شما پیامی فرستاد",
+  "new_message.other": "{name} برای شما {count} پیام فرستاد",
+  "group_invite": "{name} شما را به {group} دعوت کرد",
+  "mention": "{name} شما را در {group} منشن کرد"
+}

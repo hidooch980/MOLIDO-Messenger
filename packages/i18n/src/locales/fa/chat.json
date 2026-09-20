@@ -1,0 +1,18 @@
+{
+  "send": "ارسال",
+  "message_placeholder": "پیامی بنویسید",
+  "message_failed": "ارسال پیام ناموفق بود.",
+  "retry": "تلاش مجدد",
+  "reply": "پاسخ",
+  "edit": "ویرایش",
+  "delete": "حذف",
+  "edited": "ویرایش‌شده",
+  "typing": "{name} در حال تایپ است…",
+  "new_messages.one": "{count} پیام جدید",
+  "new_messages.other": "{count} پیام جدید",
+  "system.GROUP_MEMBER_JOINED": "{name} به گروه پیوست",
+  "system.GROUP_MEMBER_LEFT": "{name} از گروه خارج شد",
+  "system.GROUP_SETTINGS_CHANGED": "تنظیمات گروه به‌روزرسانی شد",
+  "system.MESSAGE_DELETED": "این پیام حذف شده است",
+  "system.MESSAGE_EDITED": "پیام ویرایش شد"
+}

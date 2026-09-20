@@ -1,0 +1,16 @@
+{
+  "AUTH_INVALID_CREDENTIALS": "Incorrect username or password.",
+  "AUTH_SESSION_EXPIRED": "Your session has expired. Please log in again.",
+  "AUTH_ACCOUNT_DISABLED": "This account has been disabled.",
+  "MESSAGE_NOT_FOUND": "This message no longer exists.",
+  "MESSAGE_FORBIDDEN": "You don't have permission to do this.",
+  "MESSAGE_TOO_LONG": "Your message is too long.",
+  "GROUP_NOT_FOUND": "This group no longer exists.",
+  "GROUP_FORBIDDEN": "You don't have permission to do this in this group.",
+  "RATE_LIMITED": "You're doing that too much. Please wait and try again.",
+  "MEDIA_TOO_LARGE": "This file is too large to upload.",
+  "MEDIA_UNSUPPORTED_TYPE": "This file type isn't supported.",
+  "VALIDATION_FAILED": "Some of the information you entered isn't valid.",
+  "NETWORK_ERROR": "Couldn't connect. Check your internet connection.",
+  "UNKNOWN_ERROR": "Something went wrong. Please try again."
+}

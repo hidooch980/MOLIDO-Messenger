@@ -1,0 +1,18 @@
+{
+  "send": "Send",
+  "message_placeholder": "Type a message",
+  "message_failed": "Message failed to send.",
+  "retry": "Retry",
+  "reply": "Reply",
+  "edit": "Edit",
+  "delete": "Delete",
+  "edited": "edited",
+  "typing": "{name} is typing…",
+  "new_messages.one": "{count} new message",
+  "new_messages.other": "{count} new messages",
+  "system.GROUP_MEMBER_JOINED": "{name} joined the group",
+  "system.GROUP_MEMBER_LEFT": "{name} left the group",
+  "system.GROUP_SETTINGS_CHANGED": "Group settings were updated",
+  "system.MESSAGE_DELETED": "This message was deleted",
+  "system.MESSAGE_EDITED": "Message edited"
+}

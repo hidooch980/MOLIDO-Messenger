@@ -1,0 +1,6 @@
+{
+  "new_message.one": "{name} sent you a message",
+  "new_message.other": "{name} sent you {count} messages",
+  "group_invite": "{name} invited you to {group}",
+  "mention": "{name} mentioned you in {group}"
+}

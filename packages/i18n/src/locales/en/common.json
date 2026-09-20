@@ -1,0 +1,13 @@
+{
+  "app_name": "MOLIDO Messenger",
+  "language": "Language",
+  "direction": "ltr",
+  "loading": "Loading…",
+  "retry": "Retry",
+  "cancel": "Cancel",
+  "save": "Save",
+  "close": "Close",
+  "search": "Search",
+  "yes": "Yes",
+  "no": "No"
+}

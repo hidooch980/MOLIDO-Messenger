@@ -1,0 +1,7 @@
+{
+  "plan": "Plan",
+  "price": "Price",
+  "upgrade": "Upgrade",
+  "invoice": "Invoice",
+  "payment_failed": "Your payment could not be processed."
+}

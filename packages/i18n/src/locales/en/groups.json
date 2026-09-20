@@ -1,0 +1,10 @@
+{
+  "create": "Create group",
+  "leave": "Leave group",
+  "join": "Join group",
+  "members": "Members",
+  "name": "Group name",
+  "description": "Description",
+  "forbidden": "You don't have permission to do this in this group.",
+  "not_found": "This group no longer exists."
+}
