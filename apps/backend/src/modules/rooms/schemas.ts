@@ -1,8 +1,15 @@
 import { z } from "zod";
+import { ROOM_CATEGORIES } from "./categories.js";
 
 export const createRoomSchema = z.object({
   name: z.string().min(1).max(80),
   description: z.string().max(280).optional(),
+  category: z.enum(ROOM_CATEGORIES).optional(),
+  isPublic: z.boolean().optional(),
+});
+
+export const publicRoomsQuerySchema = z.object({
+  category: z.enum(ROOM_CATEGORIES).optional(),
 });
 
 export const sendMessageSchema = z.object({
@@ -17,3 +24,4 @@ export const historyQuerySchema = z.object({
 export type CreateRoomInput = z.infer<typeof createRoomSchema>;
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 export type HistoryQueryInput = z.infer<typeof historyQuerySchema>;
+export type PublicRoomsQueryInput = z.infer<typeof publicRoomsQuerySchema>;

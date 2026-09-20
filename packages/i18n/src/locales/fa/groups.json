@@ -6,5 +6,17 @@
   "name": "نام گروه",
   "description": "توضیحات",
   "forbidden": "شما اجازه انجام این کار در این گروه را ندارید.",
-  "not_found": "این گروه دیگر وجود ندارد."
+  "not_found": "این گروه دیگر وجود ندارد.",
+  "lobby": "لابی اتاق‌ها",
+  "public": "عمومی",
+  "private": "خصوصی",
+  "member_count.one": "{count} عضو",
+  "member_count.other": "{count} عضو",
+  "category.general": "عمومی",
+  "category.sports": "ورزش",
+  "category.music": "موسیقی",
+  "category.movies": "فیلم",
+  "category.gaming": "بازی",
+  "category.tech": "فناوری",
+  "category.dating": "دوستیابی"
 }

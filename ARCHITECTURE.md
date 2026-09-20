@@ -30,6 +30,13 @@ apps/frontend     React + Vite web client.
   history (REST, paginated by `before`/`limit`). A message's `body` is
   stored exactly as typed — no translation or normalization on write (spec
   section 8).
+- Yahoo-style public room lobby: `Room.category` (free-text code from
+  `ROOM_CATEGORIES`, rendered via `groups.category.<code>` — same
+  no-DB-enum pattern as `LOCALE_REGISTRY`) and `Room.isPublic`.
+  `GET /api/rooms/public?category=...` lists public rooms with a live
+  member count, joinable without a prior invite; `joinRoom()` rejects a
+  join-by-id attempt on a private room with `GROUP_FORBIDDEN`. There is no
+  invite mechanism for private rooms yet (tracked in `RISK_REGISTER.md`).
 - Realtime chat: Socket.IO requires the same JWT as the REST API
   (`io.use` handshake middleware) — there is no separate, weaker socket
   auth. `chat:join` re-checks room membership server-side before

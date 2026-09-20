@@ -43,6 +43,7 @@ VERIFIED / OBSERVED / INFERRED / UNKNOWN / BLOCKED — see project conventions.
 | Socket auth = same JWT as REST | VERIFIED (code) | `io.use()` handshake middleware; no separate/weaker socket auth path. |
 | System join/leave events persisted as codes | VERIFIED (code) | `systemEventCode`/`systemEventName` columns, not a rendered sentence; not yet live-pushed over the socket — see `RISK_REGISTER.md`. |
 | Message edit/delete | NOT STARTED | Schema has the columns; no routes yet. |
+| Public room lobby (Yahoo-style categories) | VERIFIED (live smoke test) | `Room.category`/`Room.isPublic` + `GET /api/rooms/public?category=`. Verified: a public "sports" room appeared filtered and unfiltered; a private room did not appear in either listing; joining the private room by id was rejected with `GROUP_FORBIDDEN`; member count went 1→2 live after a join. Category names translated fa/en via `groups.category.*`. |
 | Redis (presence/pub-sub) | NOT STARTED | Still not needed at single-instance scale. |
 | WebRTC/SFU (voice/video) | NOT STARTED | Explicitly deferred; see `ARCHITECTURE.md`. |
 | Admin panel | NOT STARTED | |
@@ -62,7 +63,9 @@ mixed-direction chat message. No automated UI regression suite exists yet
    history fetch.
 2. Add message edit/delete routes using the existing `editedAt`/`deletedAt`
    columns and `chat.system.MESSAGE_EDITED`/`MESSAGE_DELETED` keys.
-3. Add refresh-token/logout/session-revocation before any production use.
-4. Provision PostgreSQL for a real deployed environment (still only a local
+3. Design an invite mechanism for private rooms (currently joinable only by
+   an existing member's/owner's action — no invite link/code exists).
+4. Add refresh-token/logout/session-revocation before any production use.
+5. Provision PostgreSQL for a real deployed environment (still only a local
    dev cluster) and wire `DATABASE_URL` via secrets, not a committed file.
-5. Push and confirm the GitHub Actions `i18n-validate` job is green on CI.
+6. Push and confirm the GitHub Actions `i18n-validate` job is green on CI.

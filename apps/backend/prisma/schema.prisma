@@ -27,10 +27,16 @@ model User {
   @@map("users")
 }
 
+// `category` is a free-text code validated against ROOM_CATEGORIES at the
+// app layer (apps/backend/src/modules/rooms/categories.ts) and rendered via
+// `groups.category.<code>` — the same no-DB-enum pattern as
+// `User.localePreference`, so adding a category never needs a migration.
 model Room {
   id          String   @id @default(uuid())
   name        String
   description String?
+  category    String   @default("general")
+  isPublic    Boolean  @default(true)
   ownerId     String
   owner       User     @relation("RoomOwner", fields: [ownerId], references: [id])
   createdAt   DateTime @default(now())
@@ -39,6 +45,7 @@ model Room {
   members  RoomMember[]
   messages Message[]
 
+  @@index([isPublic, category])
   @@map("rooms")
 }
 

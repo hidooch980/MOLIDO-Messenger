@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { LocalizedError } from "@molido/i18n";
 import { requireAuth } from "../../i18n/require-auth.js";
-import { createRoomSchema, historyQuerySchema } from "./schemas.js";
-import { createRoom, listMyRooms, joinRoom, leaveRoom, getHistory, postSystemMessage } from "./service.js";
+import { createRoomSchema, historyQuerySchema, publicRoomsQuerySchema } from "./schemas.js";
+import { createRoom, listMyRooms, listPublicRooms, joinRoom, leaveRoom, getHistory, postSystemMessage } from "./service.js";
 
 export const roomsRouter = Router();
 roomsRouter.use(requireAuth());
@@ -22,6 +22,20 @@ roomsRouter.post("/", async (req, res, next) => {
 roomsRouter.get("/", async (req, res, next) => {
   try {
     res.json(await listMyRooms(req.auth!.sub));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// The Yahoo-style room lobby: browse/join without a prior invite. Must be
+// declared before any future `GET /:roomId`-shaped route to avoid "public"
+// being parsed as a room id.
+roomsRouter.get("/public", async (req, res, next) => {
+  const parsed = publicRoomsQuerySchema.safeParse(req.query);
+  if (!parsed.success) return next(new LocalizedError("VALIDATION_FAILED"));
+
+  try {
+    res.json(await listPublicRooms(parsed.data));
   } catch (err) {
     next(err);
   }
