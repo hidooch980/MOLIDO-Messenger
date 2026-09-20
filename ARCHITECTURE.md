@@ -102,6 +102,27 @@ apps/frontend     React + Vite web client.
   PHASE 4's lighter violet theme after user feedback that it looked too
   plain; Vazirmatn (Persian) + Inter (Latin) loaded via Google Fonts in
   `index.html`.
+- `src/components/Avatar.tsx`: an initials avatar with a deterministic
+  per-username gradient (no image upload exists yet — see
+  `RISK_REGISTER.md`), used in the buddy list, friend requests, chat
+  messages, the status bar, and the call overlay. A small `.badge-dot`
+  overlay reuses `PresenceDot` at the avatar's corner instead of a
+  separate inline dot.
+- `src/components/Icon.tsx`: a small hand-picked set of inline SVG icons
+  (phone, video, bell, send, logout, back, check, close, add) — not an
+  icon-font dependency, keeping bundle size down. Replaced emoji buttons
+  (📞/🎥/📣) and several plain-text action buttons across `BuddyList`,
+  `ChatRoom`, `RoomsPanel`, `StatusBar`, and `CallOverlay`.
+- Call UI polish: a pulsing/ringing glow ring around the peer's avatar for
+  outgoing/incoming calls (`@keyframes molido-ring-pulse`), and round
+  icon-only accept/decline/hang-up buttons instead of text buttons.
+- Chat bubble polish: each message row now shows the sender's avatar next
+  to a bubble (a fade+slide-in entrance animation), with the viewer's own
+  messages visually distinguished (reversed row direction, a blue-tinted
+  gradient background) from others'.
+- A `min-width: 700px` breakpoint widens the app shell (400px → 520px) and
+  the chat pane's height on desktop-sized viewports, instead of a single
+  fixed narrow "widget" width for every screen size.
 - `src/components/RoomsPanel.tsx`: "My rooms" / "Room lobby" tabs, a
   category filter (`ROOM_CATEGORIES` from `@molido/i18n`), create-room
   form, and join-from-lobby — the frontend counterpart to PHASE 2/2.5's

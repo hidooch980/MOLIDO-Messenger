@@ -4,6 +4,8 @@ import { useAuth } from "../auth/AuthContext.js";
 import { useSocket } from "../socket/SocketContext.js";
 import { api } from "../api/client.js";
 import { senderNameOf, type ChatMessage, type Room } from "../api/types.js";
+import { Avatar } from "./Avatar.js";
+import { Icon } from "./Icon.js";
 
 interface ChatRoomProps {
   room: Room;
@@ -12,7 +14,7 @@ interface ChatRoomProps {
 
 export function ChatRoom({ room, onBack }: ChatRoomProps) {
   const { t } = useTranslation(["chat", "common", "errors"]);
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { socket } = useSocket();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -62,33 +64,38 @@ export function ChatRoom({ room, onBack }: ChatRoomProps) {
   return (
     <div className="chat-room">
       <div className="chat-room-header">
-        <button type="button" className="link" onClick={onBack}>
-          ← {t("common:back")}
+        <button type="button" className="icon-button" onClick={onBack} title={t("common:back")}>
+          <Icon name="back" />
         </button>
         <strong>{room.name}</strong>
       </div>
       {joinError && <p className="form-error">{t(`errors:${joinError}` as never)}</p>}
       <ul className="chat-messages" ref={listRef}>
-        {messages.map((m) => (
-          <li key={m.id} className={m.systemEventCode ? "chat-system-message" : "chat-message"}>
-            {m.systemEventCode ? (
-              <em>{t(`system.${m.systemEventCode}`, { name: m.systemEventName })}</em>
-            ) : (
-              <>
+        {messages.map((m) => {
+          if (m.systemEventCode) {
+            return (
+              <li key={m.id} className="chat-system-message">
+                <em>{t(`system.${m.systemEventCode}`, { name: m.systemEventName })}</em>
+              </li>
+            );
+          }
+          const isOwn = senderNameOf(m) === user?.username;
+          return (
+            <li key={m.id} className={`chat-message-row${isOwn ? " own" : ""}`}>
+              <Avatar name={senderNameOf(m) ?? "?"} size={26} />
+              <div className="chat-message">
                 <span className="chat-sender">{senderNameOf(m)}</span>
                 <span className="chat-body">{m.body}</span>
-              </>
-            )}
-          </li>
-        ))}
+              </div>
+            </li>
+          );
+        })}
       </ul>
       <form onSubmit={handleSend} className="chat-input-form">
-        <input
-          placeholder={t("message_placeholder")}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-        />
-        <button type="submit">{t("send")}</button>
+        <input placeholder={t("message_placeholder")} value={draft} onChange={(e) => setDraft(e.target.value)} />
+        <button type="submit" className="icon-button primary" title={t("send")}>
+          <Icon name="send" />
+        </button>
       </form>
     </div>
   );

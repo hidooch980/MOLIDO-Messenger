@@ -5,6 +5,8 @@ import { useAuth } from "../auth/AuthContext.js";
 import { api, ApiError } from "../api/client.js";
 import type { Room } from "../api/types.js";
 import { ChatRoom } from "./ChatRoom.js";
+import { Avatar } from "./Avatar.js";
+import { Icon } from "./Icon.js";
 
 type Tab = "mine" | "lobby";
 
@@ -77,7 +79,9 @@ export function RoomsPanel() {
 
       <form onSubmit={handleCreate} className="create-room-form">
         <input placeholder={t("name_placeholder")} value={name} onChange={(e) => setName(e.target.value)} required />
-        <button type="submit">{t("create")}</button>
+        <button type="submit" className="icon-button" title={t("create")}>
+          <Icon name="add" />
+        </button>
       </form>
       {error && <p className="form-error">{error}</p>}
 
@@ -85,6 +89,7 @@ export function RoomsPanel() {
         <ul className="room-list">
           {myRooms.map((room) => (
             <li key={room.id} onClick={() => setSelectedRoom(room)}>
+              <Avatar name={room.name} size={32} />
               <span className="room-name">{room.name}</span>
             </li>
           ))}
@@ -105,12 +110,15 @@ export function RoomsPanel() {
           <ul className="room-list">
             {publicRooms.map((room) => (
               <li key={room.id}>
-                <span className="room-name">{room.name}</span>
-                <span className="room-meta">
-                  {t(`category.${room.category}`)} · {t("member_count", { count: room.memberCount ?? 0 })}
-                </span>
-                <button type="button" onClick={() => handleJoin(room)}>
-                  {t("join")}
+                <Avatar name={room.name} size={32} />
+                <div className="room-info">
+                  <span className="room-name">{room.name}</span>
+                  <span className="room-meta">
+                    {t(`category.${room.category}`)} · {t("member_count", { count: room.memberCount ?? 0 })}
+                  </span>
+                </div>
+                <button type="button" className="icon-button" onClick={() => handleJoin(room)} title={t("join")}>
+                  <Icon name="add" />
                 </button>
               </li>
             ))}

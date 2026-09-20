@@ -111,6 +111,12 @@ body {
   justify-content: space-between;
 }
 
+.status-identity-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .status-identity strong {
   font-weight: 700;
 }
@@ -126,6 +132,9 @@ body {
 
 button.link {
   align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   background: none;
   border: none;
   color: var(--accent-b);
@@ -286,29 +295,6 @@ button.link:hover {
   text-overflow: ellipsis;
 }
 
-.nudge-button {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--panel-border);
-  cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
-  padding: 7px 9px;
-  border-radius: var(--radius-sm);
-  margin-inline-start: 4px;
-  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
-}
-
-.nudge-button:hover:not(:disabled) {
-  background: rgba(59, 130, 246, 0.18);
-  box-shadow: 0 0 14px rgba(59, 130, 246, 0.35);
-  transform: translateY(-1px);
-}
-
-.nudge-button:disabled {
-  opacity: 0.28;
-  cursor: default;
-}
-
 .empty-state {
   color: var(--text-muted);
   font-size: 12px;
@@ -332,10 +318,18 @@ button.link:hover {
   border-color: var(--panel-border);
 }
 
+.room-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
 .room-name {
   font-weight: 700;
-  flex: 1;
   font-size: 13.5px;
+  flex: 1;
 }
 
 .room-meta {
@@ -604,6 +598,143 @@ button.secondary {
   80% { transform: translateX(4px); }
 }
 
+/* Avatars */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #06121f;
+  font-weight: 800;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.avatar-badge {
+  position: relative;
+  display: inline-flex;
+  margin-inline-end: 10px;
+}
+
+.badge-dot {
+  position: absolute;
+  bottom: -1px;
+  inset-inline-end: -1px;
+  padding: 2px;
+  background: var(--bg-deep-2);
+  border-radius: 50%;
+  display: flex;
+}
+
+.badge-dot span {
+  margin: 0 !important;
+}
+
+/* Icon buttons — shared circular treatment for nudge/call/send/accept/etc. */
+.icon-button,
+.nudge-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--panel-border);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  margin-inline-start: 4px;
+  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.icon-button:hover:not(:disabled),
+.nudge-button:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.18);
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.35);
+  transform: translateY(-1px);
+}
+
+.icon-button:disabled,
+.nudge-button:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+.icon-button.primary {
+  background: var(--accent-gradient);
+  color: #06121f;
+  border: none;
+  box-shadow: var(--accent-glow);
+}
+
+.icon-button.danger {
+  background: rgba(244, 63, 94, 0.18);
+  border-color: rgba(244, 63, 94, 0.4);
+  color: var(--danger);
+}
+
+.icon-button.danger:hover:not(:disabled) {
+  background: rgba(244, 63, 94, 0.3);
+  box-shadow: 0 0 14px rgba(244, 63, 94, 0.4);
+}
+
+.icon-button.accept {
+  color: var(--online);
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+.icon-button.decline {
+  color: var(--danger);
+  border-color: rgba(244, 63, 94, 0.4);
+}
+
+.icon-button.round {
+  border-radius: 50%;
+  padding: 14px;
+}
+
+/* Chat message layout: avatar + bubble, entrance animation, own-message alignment */
+.chat-message-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  animation: molido-message-in 0.18s ease;
+}
+
+.chat-message-row.own {
+  flex-direction: row-reverse;
+}
+
+.chat-message-row.own .chat-message {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.28), rgba(34, 211, 238, 0.16));
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+@keyframes molido-message-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Incoming/outgoing call avatar rings */
+.call-avatar-ring {
+  display: inline-flex;
+  border-radius: 50%;
+  padding: 6px;
+  margin-bottom: 8px;
+}
+
+.call-avatar-ring.ringing {
+  animation: molido-ring-pulse 1s ease-in-out infinite;
+}
+
+.call-avatar-ring.pulsing {
+  animation: molido-ring-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes molido-ring-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+  70% { box-shadow: 0 0 0 14px rgba(59, 130, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
 /* Scrollbar polish (WebKit) */
 .chat-messages::-webkit-scrollbar {
   width: 6px;
@@ -612,4 +743,15 @@ button.secondary {
 .chat-messages::-webkit-scrollbar-thumb {
   background: rgba(148, 180, 255, 0.25);
   border-radius: 4px;
+}
+
+/* Wider canvas on desktop viewports instead of a fixed narrow phone-width column */
+@media (min-width: 700px) {
+  .app-shell {
+    max-width: 520px;
+  }
+
+  .chat-room {
+    height: 560px;
+  }
 }

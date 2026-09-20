@@ -6,6 +6,8 @@ import { useCall } from "../call/CallContext.js";
 import { api, ApiError } from "../api/client.js";
 import type { Friend, FriendRequest } from "../api/types.js";
 import { PresenceDot } from "./PresenceDot.js";
+import { Avatar } from "./Avatar.js";
+import { Icon } from "./Icon.js";
 
 export function BuddyList() {
   const { t } = useTranslation(["friends", "errors", "common", "calls"]);
@@ -76,7 +78,9 @@ export function BuddyList() {
           onChange={(e) => setAddUsername(e.target.value)}
           required
         />
-        <button type="submit">{t("add")}</button>
+        <button type="submit" className="icon-button" title={t("add")}>
+          <Icon name="add" />
+        </button>
       </form>
       {notice && <p className="form-notice">{notice}</p>}
 
@@ -86,12 +90,13 @@ export function BuddyList() {
           <ul className="friend-requests">
             {requests.map((r) => (
               <li key={r.id}>
+                <Avatar name={r.requester.username} size={30} />
                 <span>{r.requester.username}</span>
-                <button type="button" onClick={() => handleAccept(r.id)}>
-                  {t("accept")}
+                <button type="button" className="icon-button accept" onClick={() => handleAccept(r.id)} title={t("accept")}>
+                  <Icon name="check" />
                 </button>
-                <button type="button" className="secondary" onClick={() => handleDecline(r.id)}>
-                  {t("decline")}
+                <button type="button" className="icon-button decline" onClick={() => handleDecline(r.id)} title={t("decline")}>
+                  <Icon name="close" />
                 </button>
               </li>
             ))}
@@ -102,7 +107,12 @@ export function BuddyList() {
       <ul className="buddy-entries">
         {friendsWithLivePresence.map((f) => (
           <li key={f.friendshipId} className="buddy-entry">
-            <PresenceDot state={f.presence} />
+            <span className="avatar-badge">
+              <Avatar name={f.username} />
+              <span className="badge-dot">
+                <PresenceDot state={f.presence} />
+              </span>
+            </span>
             <div className="buddy-info">
               <span className="buddy-name">{f.username}</span>
               {f.statusMessage && <span className="buddy-status">{f.statusMessage}</span>}
@@ -114,7 +124,7 @@ export function BuddyList() {
               onClick={() => handleCall(f.id, f.username, false)}
               title={t("calls:voice_call")}
             >
-              📞
+              <Icon name="phone" />
             </button>
             <button
               type="button"
@@ -123,7 +133,7 @@ export function BuddyList() {
               onClick={() => handleCall(f.id, f.username, true)}
               title={t("calls:video_call")}
             >
-              🎥
+              <Icon name="video" />
             </button>
             <button
               type="button"
@@ -132,7 +142,7 @@ export function BuddyList() {
               onClick={() => handleNudge(f.id)}
               title={t("nudge")}
             >
-              📣
+              <Icon name="bell" />
             </button>
           </li>
         ))}

@@ -4,6 +4,8 @@ import { MANUAL_PRESENCE_STATES, type ManualPresenceState } from "@molido/i18n";
 import { useAuth } from "../auth/AuthContext.js";
 import { useSocket } from "../socket/SocketContext.js";
 import { api } from "../api/client.js";
+import { Avatar } from "./Avatar.js";
+import { Icon } from "./Icon.js";
 
 export function StatusBar() {
   const { t } = useTranslation(["friends", "common", "auth"]);
@@ -25,7 +27,10 @@ export function StatusBar() {
   return (
     <div className="status-bar">
       <div className="status-identity">
-        <strong>{user?.username}</strong>
+        <span className="status-identity-left">
+          {user && <Avatar name={user.username} size={30} />}
+          <strong>{user?.username}</strong>
+        </span>
         <select value={presence} onChange={(e) => handlePresenceChange(e.target.value as ManualPresenceState)}>
           {MANUAL_PRESENCE_STATES.map((state) => (
             <option key={state} value={state}>
@@ -44,7 +49,7 @@ export function StatusBar() {
         <button type="submit">{t("common:save")}</button>
       </form>
       <button type="button" className="link" onClick={logout}>
-        {t("auth:logout")}
+        <Icon name="logout" size={13} /> {t("auth:logout")}
       </button>
     </div>
   );
