@@ -94,6 +94,15 @@ apps/frontend     React + Vite web client.
   two participants' personal rooms and never touches media itself — every
   event goes through the same `areFriends()` gate as `friend:nudge`,
   implemented once via a shared `forwardIfFriends()` helper in `index.ts`.
+- Rate limiting (PHASE 10): `src/realtime/rate-limit.ts` is a minimal
+  in-memory fixed-window limiter (`allowRate(userId, bucket, limit,
+  windowMs)`), applied to `chat:message` (15/10s), `friend:nudge` (5/30s),
+  and `call:invite` (5/30s) — the three user-triggered actions capable of
+  a spam flood. `call:offer`/`answer`/`ice-candidate` are deliberately left
+  unlimited since they fire many times per call by design. Being
+  in-process memory, this only limits per backend instance, same
+  single-instance caveat as presence (risk 17) — a real multi-instance
+  deployment would need it counted in Redis instead.
 
 ## Frontend (`apps/frontend`)
 

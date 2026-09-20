@@ -1,6 +1,6 @@
 # Master State
 
-Last updated: 2026-09-20 (PHASE 9)
+Last updated: 2026-09-20 (PHASE 10)
 
 ## Status legend
 
@@ -135,6 +135,15 @@ VERIFIED / OBSERVED / INFERRED / UNKNOWN / BLOCKED — see project conventions.
 | `apps/backend/src/realtime/io.ts` reused for edit/delete broadcast | VERIFIED (code) | Same PHASE 8 shared-`io` module; a new `broadcastMessageUpdate()` helper in `rooms/routes.ts` emits `chat:message:updated` after each successful edit/delete. |
 | Full regression after this change | VERIFIED (live browser test, fresh run) | Re-ran rooms/chat/live-join, friend request/accept, presence, nudge, and video call invite/accept/active/hang-up together with fresh users after a clean DB/Redis reset — all passed. |
 
+## PHASE 10 — Socket rate limiting + a missed validation gap — LOCKED
+
+| Area | Status | Notes |
+|---|---|---|
+| Per-user rate limiting on `chat:message`/`friend:nudge`/`call:invite` | VERIFIED (live browser test) | New `apps/backend/src/realtime/rate-limit.ts`: a minimal in-memory fixed-window limiter (matches this project's current single-process architecture — see risk 17), keyed by `userId:bucket`. Limits: `chat:message` 15/10s, `friend:nudge` 5/30s, `call:invite` 5/30s; exceeding a limit acks `RATE_LIMITED` (existing error code/translation) instead of silently dropping or crashing. Closes RISK_REGISTER.md risks 14/18/23. |
+| Live verification | VERIFIED (live browser test) | Fired 20 rapid `chat:message` sends through the real UI in a tight loop: exactly 15 went through (matching the configured limit), the 16th onward surfaced a `RATE_LIMITED` form error, and a message sent again after the 10s window succeeded — confirmed by counting actual rendered message rows, not just checking for an error. |
+| `chat:message` socket handler now validates against `sendMessageSchema` | VERIFIED (code) | Closes RISK_REGISTER.md risk 27 (found while writing PHASE 9's docs): the handler previously called `postMessage()` unvalidated. Now distinguishes an over-length body (`MESSAGE_TOO_LONG`) from any other validation failure (`VALIDATION_FAILED`) by inspecting the Zod issue codes. |
+| Full regression after this change | VERIFIED (live browser test, fresh run) | Re-ran live join, chat, message edit, friend request/accept, nudge, and video call invite/accept/active/hang-up together with fresh users after a clean DB/Redis reset — all passed under normal (non-abusive) usage, confirming the new limits don't interfere with legitimate traffic. |
+
 ## Regression baseline
 
 fa/RTL and en/LTR: verified via `i18n:validate` (key/placeholder parity,
@@ -145,7 +154,7 @@ negotiation, not just DOM/socket assertions). Each phase's fixes were
 re-verified against the *previous* phase's browser tests before being
 called done — no known regression as of this update.
 
-## Immediate next steps (candidate PHASE 10)
+## Immediate next steps (candidate PHASE 11)
 
 1. Design an invite mechanism for private rooms.
 2. Add a TURN server for reliable call connectivity across restrictive NATs.
@@ -153,8 +162,9 @@ called done — no known regression as of this update.
 4. Provision PostgreSQL + Redis for a real deployed environment (still only
    local dev instances) and wire secrets, not committed files.
 5. Push and confirm the GitHub Actions `i18n-validate` job is green on CI.
-6. Add per-user rate limiting on `chat:message`/`friend:nudge`/call
-   signaling (RISK_REGISTER.md risks 14/18/23).
-7. `sendMessageSchema` exists but the socket `chat:message` handler doesn't
-   validate against it (`MESSAGE_TOO_LONG` is unenforced) — validate before
-   calling `postMessage()`, matching the pattern just added for edit.
+6. The PHASE 10 rate limiter is in-process memory only, per risk 17 — once
+   there's a second backend instance, move it into Redis (same reasoning
+   as presence) so limits apply per user, not per process.
+7. `call:offer`/`call:answer`/`call:ice-candidate` are still unlimited by
+   design (they fire naturally many times during one call's negotiation) —
+   revisit if that's ever found to be abusable.

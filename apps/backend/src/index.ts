@@ -11,9 +11,11 @@ import { roomsRouter } from "./modules/rooms/routes.js";
 import { friendsRouter, profileRouter } from "./modules/friends/routes.js";
 import { verifyToken, type AuthTokenPayload } from "./modules/auth/service.js";
 import { requireMembership, postMessage } from "./modules/rooms/service.js";
+import { sendMessageSchema } from "./modules/rooms/schemas.js";
 import { listFriendUserIds, areFriends } from "./modules/friends/service.js";
 import { registerConnection, removeConnection, setManualState, isManualPresenceState } from "./presence/service.js";
 import { setIO } from "./realtime/io.js";
+import { allowRate } from "./realtime/rate-limit.js";
 
 const app = express();
 app.use(helmet());
@@ -103,6 +105,10 @@ io.on("connection", (socket) => {
 
   // Yahoo Messenger's "buzz" — only deliverable between accepted friends.
   socket.on("friend:nudge", async (toUserId: string, ack?: (error?: string) => void) => {
+    if (!allowRate(auth.sub, "friend:nudge", 5, 30_000)) {
+      ack?.("RATE_LIMITED");
+      return;
+    }
     try {
       const isFriend = await areFriends(auth.sub, toUserId);
       if (!isFriend) throw new LocalizedError("FRIEND_FORBIDDEN");
@@ -132,9 +138,13 @@ io.on("connection", (socket) => {
     }
   }
 
-  socket.on("call:invite", (payload: { toUserId: string; video: boolean }, ack?: (error?: string) => void) =>
-    forwardIfFriends(payload, "call:incoming", ack)
-  );
+  socket.on("call:invite", (payload: { toUserId: string; video: boolean }, ack?: (error?: string) => void) => {
+    if (!allowRate(auth.sub, "call:invite", 5, 30_000)) {
+      ack?.("RATE_LIMITED");
+      return;
+    }
+    void forwardIfFriends(payload, "call:incoming", ack);
+  });
   socket.on("call:accept", (payload: { toUserId: string }, ack?: (error?: string) => void) =>
     forwardIfFriends(payload, "call:accepted", ack)
   );
@@ -167,8 +177,18 @@ io.on("connection", (socket) => {
   });
 
   socket.on("chat:message", async (payload: { roomId: string; body: string }, ack?: (error?: string) => void) => {
+    if (!allowRate(auth.sub, "chat:message", 15, 10_000)) {
+      ack?.("RATE_LIMITED");
+      return;
+    }
+    const parsed = sendMessageSchema.safeParse(payload);
+    if (!parsed.success) {
+      const tooLong = parsed.error.issues.some((issue) => issue.code === "too_big");
+      ack?.(tooLong ? "MESSAGE_TOO_LONG" : "VALIDATION_FAILED");
+      return;
+    }
     try {
-      const message = await postMessage(payload.roomId, auth.sub, payload.body);
+      const message = await postMessage(payload.roomId, auth.sub, parsed.data.body);
       io.to(payload.roomId).emit("chat:message", {
         id: message.id,
         roomId: message.roomId,
