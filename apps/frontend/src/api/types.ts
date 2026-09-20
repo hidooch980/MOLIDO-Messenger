@@ -36,3 +36,33 @@ export interface FriendRequest {
   createdAt: string;
   requester: PublicProfile;
 }
+
+export interface Room {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  isPublic: boolean;
+  ownerId: string;
+  createdAt: string;
+  updatedAt: string;
+  memberCount?: number;
+}
+
+export interface ChatMessage {
+  id: string;
+  roomId: string;
+  senderId: string | null;
+  /** Present on messages received live over the socket. */
+  senderUsername?: string;
+  /** Present on messages fetched via the REST history endpoint. */
+  sender?: { username: string } | null;
+  body: string | null;
+  systemEventCode?: string | null;
+  systemEventName?: string | null;
+  createdAt: string;
+}
+
+export function senderNameOf(message: ChatMessage): string | undefined {
+  return message.senderUsername ?? message.sender?.username ?? undefined;
+}

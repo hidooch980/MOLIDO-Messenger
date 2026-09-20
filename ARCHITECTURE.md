@@ -1,8 +1,9 @@
 # Architecture
 
-Status: PHASE 4 — the buddy list, presence, and nudge now have a working
-frontend UI, verified in a real browser, on top of local dev PostgreSQL +
-Redis. Nothing below is deployed to a real environment.
+Status: PHASE 5 — rooms/chat now have a working frontend UI alongside the
+buddy list, presence, and nudge, all verified in a real browser on top of
+local dev PostgreSQL + Redis. Nothing below is deployed to a real
+environment.
 
 ## Overview
 
@@ -33,8 +34,9 @@ apps/frontend     React + Vite web client.
   stored exactly as typed — no translation or normalization on write (spec
   section 8).
 - Yahoo-style public room lobby: `Room.category` (free-text code from
-  `ROOM_CATEGORIES`, rendered via `groups.category.<code>` — same
-  no-DB-enum pattern as `LOCALE_REGISTRY`) and `Room.isPublic`.
+  `ROOM_CATEGORIES`, now defined in `@molido/i18n` so backend and frontend
+  share one list — same no-DB-enum pattern as `LOCALE_REGISTRY`, rendered
+  via `groups.category.<code>`) and `Room.isPublic`.
   `GET /api/rooms/public?category=...` lists public rooms with a live
   member count, joinable without a prior invite; `joinRoom()` rejects a
   join-by-id attempt on a private room with `GROUP_FORBIDDEN`. There is no
@@ -92,13 +94,21 @@ apps/frontend     React + Vite web client.
 - `src/styles.css`: a stylistic homage to the era's messenger look (violet
   gradient title bar, rounded panel, compact buddy rows) — an original
   design, not a copy of any product's actual logo or brand assets.
+- `src/components/RoomsPanel.tsx`: "My rooms" / "Room lobby" tabs, a
+  category filter (`ROOM_CATEGORIES` from `@molido/i18n`), create-room
+  form, and join-from-lobby — the frontend counterpart to PHASE 2/2.5's
+  rooms backend.
+- `src/components/ChatRoom.tsx`: loads history via REST on entry, joins the
+  Socket.IO room (`chat:join`), sends/receives `chat:message` live, and
+  renders system events via `chat.system.<CODE>` instead of a hardcoded
+  sentence.
 
-### A real bug this UI work found (fixed, not just noted)
+### Real bugs this UI work found (fixed, not just noted)
 
 Building and *actually loading this in a browser* — not just typechecking —
-surfaced two bugs that had been sitting undetected since PHASE 0/3:
+surfaced bugs that had been sitting undetected since earlier phases:
 
-1. `apps/frontend/src/i18n/index.ts` dynamically imported
+1. (PHASE 4) `apps/frontend/src/i18n/index.ts` dynamically imported
    `` `@molido/i18n/locales/${locale}/${ns}.json` ``. Vite's **production**
    build (`vite build`) happened to resolve this and had been passing since
    PHASE 0 — but Vite's **dev server** 404s on a subpath-export pattern
@@ -106,14 +116,25 @@ surfaced two bugs that had been sitting undetected since PHASE 0/3:
    under `npm run dev` specifically. Fixed by switching to
    `import.meta.glob(...)`, Vite's documented dev-and-build-safe way to
    import a directory of files by pattern.
-2. `friends.nudge_received`'s `{name}` placeholder rendered as the literal
-   string `{name}` instead of interpolating, because i18next's default
-   delimiter is `{{var}}` while every JSON bundle was written for
+2. (PHASE 4) `friends.nudge_received`'s `{name}` placeholder rendered as the
+   literal string `{name}` instead of interpolating, because i18next's
+   default delimiter is `{{var}}` while every JSON bundle was written for
    `packages/i18n`'s own `Translator` (`core/translate.ts`), which uses
    `{var}`. Fixed by setting i18next's `interpolation.prefix`/`suffix` to
    `{`/`}` so both consumers of the same JSON files agree on one syntax.
    A related but not-yet-triggered mismatch (dot-suffix vs. i18next's
    underscore-suffix pluralization keys) is tracked in `RISK_REGISTER.md`.
+3. (PHASE 5) `SocketContext` originally stored the connected socket in a
+   `useRef`, not React state. A ref update doesn't trigger a re-render, so
+   context consumers only ever saw the freshly connected socket once
+   *something else* forced `SocketProvider` to re-render — which happened
+   to be true for the buddy list (friend `presence:update` events kept
+   firing) but not for a brand-new room with no prior socket traffic, where
+   `useSocket().socket` stayed `null` forever and `chat:join`/`chat:message`
+   silently no-opped via optional chaining. Caught only because the actual
+   two-browser chat test showed one side never receiving a live message;
+   fixed by moving the socket into `useState` so connecting always
+   triggers the render that updates every consumer.
 
 ## Realtime media (voice/video, Paltalk-style rooms)
 
@@ -141,8 +162,8 @@ work, not a half-built feature in this PHASE 0 commit.
 - Message edit/delete endpoints (schema has `editedAt`/`deletedAt`; no
   routes yet).
 - Invite mechanism for private rooms.
-- Classic-Yahoo visual theme for the frontend (color scheme, emoticon icons,
-  a "beep" doorbell sound) — currently a plain, unstyled React shell.
+- Emoticon icons and a "beep" doorbell sound for the classic-messenger feel
+  (the visual theme itself — colors, panel shapes — shipped in PHASE 4).
 - Offline message notification (messages already persist and are fetched on
   next history call — a returning user simply sees them; there is no
   separate "you have new messages" push yet).

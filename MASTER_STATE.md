@@ -1,6 +1,6 @@
 # Master State
 
-Last updated: 2026-09-20 (PHASE 4)
+Last updated: 2026-09-20 (PHASE 5)
 
 ## Status legend
 
@@ -66,7 +66,7 @@ VERIFIED / OBSERVED / INFERRED / UNKNOWN / BLOCKED — see project conventions.
 | Revenue | NOT STARTED, disabled-by-default is the design intent | `REVENUE_ENABLED=false` present in `.env.example`; no gating logic reads it yet. |
 | Email/push localization pipeline | NOT STARTED | |
 
-## PHASE 4 — Frontend UI for auth, buddy list, presence, and nudge — IN PROGRESS
+## PHASE 4 — Frontend UI for auth, buddy list, presence, and nudge — LOCKED
 
 | Area | Status | Notes |
 |---|---|---|
@@ -76,30 +76,38 @@ VERIFIED / OBSERVED / INFERRED / UNKNOWN / BLOCKED — see project conventions.
 | Classic-messenger visual theme | VERIFIED (code) | `src/styles.css` — violet gradient header, rounded buddy-list panel; an original design, not a copied logo/brand asset. |
 | Status message / presence selector UI | VERIFIED (code) | `StatusBar.tsx`; not exercised by the browser test above (only the buddy-list side was driven). |
 | Two real bugs found and fixed during this UI work | FIXED | (1) The frontend's dynamic locale `import()` 404'd only under `vite dev` (not `vite build`) — fixed with `import.meta.glob`. (2) i18next's default `{{var}}` delimiter didn't match `packages/i18n`'s own `{var}` JSON convention, so `friends.nudge_received`'s `{name}` rendered literally — fixed by configuring i18next's interpolation delimiters. Full detail in `ARCHITECTURE.md`. |
-| Room/chat UI (creating/joining rooms, sending messages) | NOT STARTED | Backend fully verified (PHASE 2); no frontend screen for it yet — this phase focused on the buddy-list/presence/nudge features the user asked to prioritize. |
 | Avatar upload UI | NOT STARTED | `PATCH /api/me` accepts a URL; no upload flow exists on either side. |
+
+## PHASE 5 — Rooms/chat frontend UI — LOCKED
+
+| Area | Status | Notes |
+|---|---|---|
+| `ROOM_CATEGORIES` moved into `@molido/i18n` | VERIFIED | Same reasoning as PHASE 4's presence-state move: the frontend category filter needs the same list the backend validates against, so it now lives in one shared place instead of backend-only. |
+| Rooms panel UI (my rooms / public lobby / category filter / create) | VERIFIED (live browser test) | alice created a room via the UI form; bob switched to the lobby tab, saw it listed, and joined via the UI button. |
+| Chat room UI (history load, join, send/receive) | VERIFIED (live browser test) | After fixing the socket-state bug below: alice sent a Persian message from her chat view; bob's browser showed it live, with `chat-sender`/`chat-body` populated from the real socket payload. |
+| System event rendering (`chat.system.<CODE>`) | VERIFIED (code) | Wired in `ChatRoom.tsx`; not separately exercised by the browser test above (no join/leave event happened to fire during it). |
+| A real bug found and fixed: socket stored in a `ref`, not state | FIXED | `SocketContext` held the connected socket in `useRef`, so context consumers only picked it up when *some other* state change (like a buddy `presence:update`) happened to force a re-render. The first version of the rooms/chat test failed exactly here — bob's browser never received alice's message — traced to `useSocket().socket` being `null` the whole time in the room view (no friend traffic to incidentally re-render it). Fixed by switching to `useState`. Re-ran the PHASE 4 buddy/nudge browser test afterward to confirm no regression — still passes. Full detail in `ARCHITECTURE.md`. |
 
 ## Regression baseline
 
 fa/RTL and en/LTR: verified via `i18n:validate` (key/placeholder parity,
-across 10 namespaces including `friends`) plus every PHASE 1–4 live smoke
-test above — PHASE 4's being the first to run in an actual browser rather
-than via API-only scripts. No automated UI regression suite exists yet
-(tracked in `RISK_REGISTER.md`).
+across 10 namespaces including `friends`) plus every PHASE 1–5 live smoke
+test above, run in both API-only scripts (PHASE 1–3) and a real browser
+(PHASE 4–5). After the PHASE 5 socket-state fix, the PHASE 4 buddy/presence/
+nudge browser test was re-run and still passes — no regression.
+(tracked further in `RISK_REGISTER.md`).
 
-## Immediate next steps (candidate PHASE 5)
+## Immediate next steps (candidate PHASE 6)
 
-1. Build the room/chat frontend screen (create/browse/join rooms, send/
-   receive messages) — the backend has been fully verified since PHASE 2
-   but still has no visual surface.
-2. Push system join/leave events live over the socket, not just on next
-   history fetch.
-3. Add message edit/delete routes using the existing `editedAt`/`deletedAt`
-   columns and `chat.system.MESSAGE_EDITED`/`MESSAGE_DELETED` keys.
-4. Design an invite mechanism for private rooms.
-5. Resolve the i18next pluralization-key mismatch (risk 20 in
+1. Push system join/leave events live over the socket, not just on next
+   history fetch, and add a browser test that actually exercises one.
+2. Add message edit/delete routes and UI using the existing
+   `editedAt`/`deletedAt` columns and `chat.system.MESSAGE_EDITED`/
+   `MESSAGE_DELETED` keys.
+3. Design an invite mechanism for private rooms.
+4. Resolve the i18next pluralization-key mismatch (risk 20 in
    `RISK_REGISTER.md`) before any UI uses a plural string.
-6. Add refresh-token/logout/session-revocation before any production use.
-7. Provision PostgreSQL + Redis for a real deployed environment (still only
+5. Add refresh-token/logout/session-revocation before any production use.
+6. Provision PostgreSQL + Redis for a real deployed environment (still only
    local dev instances) and wire secrets, not committed files.
-8. Push and confirm the GitHub Actions `i18n-validate` job is green on CI.
+7. Push and confirm the GitHub Actions `i18n-validate` job is green on CI.

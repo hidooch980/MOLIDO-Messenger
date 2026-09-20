@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ROOM_CATEGORIES } from "./categories.js";
+import { ROOM_CATEGORIES } from "@molido/i18n";
 
 export const createRoomSchema = z.object({
   name: z.string().min(1).max(80),

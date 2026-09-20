@@ -58,9 +58,15 @@ export async function initI18n(): Promise<LocaleCode> {
     ns: LOCALE_NAMESPACES,
     defaultNS: "common",
     // packages/i18n's own Translator (core/translate.ts, used server-side)
-    // interpolates `{var}`, not i18next's default `{{var}}` — every JSON
-    // bundle is written once for both consumers, so i18next must match it.
+    // interpolates `{var}` and keys plural variants as `key.one`/`key.other`
+    // (a dot, via Intl.PluralRules) — i18next's defaults are `{{var}}` and
+    // `key_one`/`key_other` (an underscore). Every JSON bundle is written
+    // once for both consumers, so i18next must match both conventions, not
+    // just interpolation — pluralSeparator alone silently no-ops otherwise
+    // (found live: a room's member count rendered as the literal string
+    // "member_count" until this was set; see RISK_REGISTER.md risk 20).
     interpolation: { escapeValue: false, prefix: "{", suffix: "}" },
+    pluralSeparator: ".",
   });
 
   applyDocumentDirection(initialLocale);

@@ -6,3 +6,4 @@ export * from "./core/format.js";
 export * from "./core/translate.js";
 export * from "./core/error-codes.js";
 export * from "./core/presence.js";
+export * from "./core/room-categories.js";

@@ -7,7 +7,10 @@
   "cancel": "Cancel",
   "save": "Save",
   "close": "Close",
+  "back": "Back",
   "search": "Search",
   "yes": "Yes",
-  "no": "No"
+  "no": "No",
+  "tabs.buddies": "Buddies",
+  "tabs.rooms": "Rooms"
 }
