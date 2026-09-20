@@ -16,10 +16,13 @@ export async function createRoom(ownerId: string, input: CreateRoomInput) {
 }
 
 export async function listMyRooms(userId: string) {
-  return prisma.room.findMany({
+  const rooms = await prisma.room.findMany({
     where: { members: { some: { userId } } },
     orderBy: { updatedAt: "desc" },
+    include: { _count: { select: { members: true } } },
   });
+
+  return rooms.map(({ _count, ...room }) => ({ ...room, memberCount: _count.members }));
 }
 
 /**

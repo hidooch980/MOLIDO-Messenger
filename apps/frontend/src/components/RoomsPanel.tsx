@@ -9,6 +9,19 @@ import { Icon } from "./Icon.js";
 
 type Tab = "mine" | "lobby";
 
+// Distinct per-category dot colors, matching the reference's room list
+// where each room's dot color differs — a purely presentational mapping,
+// not a data model change.
+const CATEGORY_DOT_COLOR: Record<string, string> = {
+  general: "#3b5bdb",
+  sports: "#2fbf4f",
+  music: "#d9364a",
+  movies: "#9c27b0",
+  gaming: "#e0a800",
+  tech: "#00acc1",
+  dating: "#e91e8c",
+};
+
 export function RoomsPanel() {
   const { t } = useTranslation(["groups", "common", "errors"]);
   const { token } = useAuth();
@@ -62,7 +75,19 @@ export function RoomsPanel() {
   }
 
   if (selectedRoom) {
-    return <ChatRoom room={selectedRoom} onBack={() => setSelectedRoom(null)} />;
+    // Member counts (and, later, unread state) can have changed while the
+    // user was in the chat — e.g. someone else joined — so refresh the
+    // list behind the scenes instead of showing it stale on return.
+    return (
+      <ChatRoom
+        room={selectedRoom}
+        onBack={() => {
+          setSelectedRoom(null);
+          void refreshMine();
+          if (tab === "lobby") void refreshLobby();
+        }}
+      />
+    );
   }
 
   return (
@@ -92,8 +117,9 @@ export function RoomsPanel() {
           <ul className="room-list">
             {myRooms.map((room) => (
               <li key={room.id} className="classic-row" onClick={() => setSelectedRoom(room)}>
-                <span className="room-dot" />
+                <span className="room-dot" style={{ background: CATEGORY_DOT_COLOR[room.category] }} />
                 <span className="room-name">{room.name}</span>
+                <span className="room-count">{room.memberCount ?? 0}</span>
               </li>
             ))}
             {myRooms.length === 0 && <li className="empty-state">{t("no_rooms")}</li>}
@@ -114,7 +140,7 @@ export function RoomsPanel() {
           <ul className="room-list">
             {publicRooms.map((room) => (
               <li key={room.id} className="classic-row">
-                <span className="room-dot" />
+                <span className="room-dot" style={{ background: CATEGORY_DOT_COLOR[room.category] }} />
                 <div className="room-info">
                   <span className="room-name">{room.name}</span>
                   <span className="room-meta">

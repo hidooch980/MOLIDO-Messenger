@@ -394,6 +394,12 @@ button.link:hover {
   flex: 1;
 }
 
+.room-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .room-meta {
   font-size: 10.5px;
   color: var(--text-muted);
