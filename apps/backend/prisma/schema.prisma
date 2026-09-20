@@ -20,5 +20,61 @@ model User {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  ownedRooms Room[]       @relation("RoomOwner")
+  memberships RoomMember[]
+  messages    Message[]
+
   @@map("users")
+}
+
+model Room {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  ownerId     String
+  owner       User     @relation("RoomOwner", fields: [ownerId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members  RoomMember[]
+  messages Message[]
+
+  @@map("rooms")
+}
+
+model RoomMember {
+  roomId   String
+  userId   String
+  role     String   @default("member") // "owner" | "member" — app-layer enum, not DB, mirrors i18n's own no-DB-enum convention
+  joinedAt DateTime @default(now())
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([roomId, userId])
+  @@map("room_members")
+}
+
+// A message's `body` is the user's original text, untouched (spec section 8)
+// — any future translation is separate derived data, never stored here.
+// `systemEventCode` is set instead of `body`/`senderId` for system-generated
+// entries (spec section 19: GROUP_MEMBER_JOINED, etc.) so every client
+// renders them via `chat.system.<CODE>` in its own viewer locale rather than
+// storing a pre-rendered sentence.
+model Message {
+  id              String    @id @default(uuid())
+  roomId          String
+  senderId        String?
+  body            String?
+  systemEventCode String?
+  systemEventName String?
+  createdAt       DateTime  @default(now())
+  editedAt        DateTime?
+  deletedAt       DateTime?
+
+  room   Room  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender User? @relation(fields: [senderId], references: [id])
+
+  @@index([roomId, createdAt])
+  @@map("messages")
 }

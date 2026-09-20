@@ -1,6 +1,6 @@
 # Master State
 
-Last updated: 2026-09-20 (PHASE 1)
+Last updated: 2026-09-20 (PHASE 2)
 
 ## Status legend
 
@@ -18,7 +18,7 @@ VERIFIED / OBSERVED / INFERRED / UNKNOWN / BLOCKED — see project conventions.
 | Frontend skeleton | VERIFIED | Built with `vite build`; dev server smoke-tested, served `dir="rtl"`. |
 | Additional locales (ar, ur, bal, tr, de, nl, fr, es) | RESERVED | Registry rows exist with `enabled: false`; no bundles. |
 
-## PHASE 1 — Authentication & persistence — IN PROGRESS
+## PHASE 1 — Authentication & persistence — LOCKED
 
 | Area | Status | Notes |
 |---|---|---|
@@ -28,28 +28,41 @@ VERIFIED / OBSERVED / INFERRED / UNKNOWN / BLOCKED — see project conventions.
 | Register/login endpoints | VERIFIED (live smoke test) | `POST /api/auth/register`, `POST /api/auth/login`. Tested: success, duplicate username → `AUTH_USERNAME_TAKEN` (409), wrong password → `AUTH_INVALID_CREDENTIALS` (401), invalid payload → `VALIDATION_FAILED` (400). Test rows truncated after verification. |
 | JWT carries locale claim | VERIFIED (live smoke test) | Registered a user with `localePreference: "en"`; a follow-up authenticated request to `/api/i18n/locales` resolved `"en"` from the token, confirming the account-preference tier of the resolution order actually works end-to-end, not just in the resolver's unit logic. |
 | Password hashing | VERIFIED (code) | bcrypt, 12 rounds. |
-| Redis (presence/pub-sub) | NOT STARTED | Not needed until realtime presence/multi-instance scaling work begins. |
 | Refresh tokens / logout / revocation | NOT STARTED | Current tokens are 7-day JWTs with no revocation list — acceptable for PHASE 1, a gap before production. |
-| Rooms / messages schema | NOT STARTED | Next candidate for PHASE 2. |
+| Confusable-username protection | NOT STARTED | Registration currently restricts usernames to ASCII alphanumeric/underscore, which sidesteps (does not solve) spec section 23's cross-script lookalike concern. |
+
+## PHASE 2 — Rooms & realtime text chat — IN PROGRESS
+
+| Area | Status | Notes |
+|---|---|---|
+| Rooms/messages schema + migration | VERIFIED | `Room`, `RoomMember`, `Message` (migration `20260920044423_rooms_and_messages`) applied to the local dev cluster. `Message.body` stored exactly as sent, untouched (spec section 8). |
+| Create/list room (REST) | VERIFIED (live smoke test) | `POST /api/rooms`, `GET /api/rooms`. |
+| Join/leave (REST) + membership enforcement | VERIFIED (live smoke test) | A non-member fetching history got `GROUP_FORBIDDEN` (403, `locale` resolved from their own account); joining then succeeded (204). |
+| Message history (REST, paginated) | VERIFIED (code) | `GET /api/rooms/:id/messages` with `before`/`limit`; not yet exercised with >1 page in this session. |
+| Realtime chat over Socket.IO | VERIFIED (live smoke test) | Two authenticated users (alice/fa, bob/en) connected with JWTs, joined the same room, and a mixed Persian/English message (`سلام Bob!`) sent by alice was received live by bob with sender identity and original body intact. |
+| Socket auth = same JWT as REST | VERIFIED (code) | `io.use()` handshake middleware; no separate/weaker socket auth path. |
+| System join/leave events persisted as codes | VERIFIED (code) | `systemEventCode`/`systemEventName` columns, not a rendered sentence; not yet live-pushed over the socket — see `RISK_REGISTER.md`. |
+| Message edit/delete | NOT STARTED | Schema has the columns; no routes yet. |
+| Redis (presence/pub-sub) | NOT STARTED | Still not needed at single-instance scale. |
 | WebRTC/SFU (voice/video) | NOT STARTED | Explicitly deferred; see `ARCHITECTURE.md`. |
 | Admin panel | NOT STARTED | |
-| Revenue | NOT STARTED, disabled-by-default is the design intent | `REVENUE_ENABLED=false` now present in `.env.example`; no gating logic reads it yet. |
+| Revenue | NOT STARTED, disabled-by-default is the design intent | `REVENUE_ENABLED=false` present in `.env.example`; no gating logic reads it yet. |
 | Email/push localization pipeline | NOT STARTED | |
-| Confusable-username protection | NOT STARTED | Registration currently restricts usernames to ASCII alphanumeric/underscore, which sidesteps (does not solve) spec section 23's cross-script lookalike concern. |
 
 ## Regression baseline
 
-fa/RTL and en/LTR: verified via `i18n:validate` (key/placeholder parity,
-now including `AUTH_USERNAME_TAKEN`/`AUTH_EMAIL_TAKEN`) plus the PHASE 1 live
-auth smoke tests above. No automated UI regression suite exists yet
+fa/RTL and en/LTR: verified via `i18n:validate` (key/placeholder parity)
+plus every PHASE 1 and PHASE 2 live smoke test above, including a live
+mixed-direction chat message. No automated UI regression suite exists yet
 (tracked in `RISK_REGISTER.md`).
 
-## Immediate next steps (candidate PHASE 2)
+## Immediate next steps (candidate PHASE 3)
 
-1. Design and migrate the rooms/messages schema, keeping message body
-   storage untouched/original per spec section 8.
-2. Add refresh-token/logout/session-revocation before any production use.
-3. Provision PostgreSQL for a real deployed environment (this phase only
-   verified a local dev cluster) and wire `DATABASE_URL` via secrets, not a
-   committed file.
-4. Push and confirm the GitHub Actions `i18n-validate` job is green on CI.
+1. Push system join/leave events live over the socket, not just on next
+   history fetch.
+2. Add message edit/delete routes using the existing `editedAt`/`deletedAt`
+   columns and `chat.system.MESSAGE_EDITED`/`MESSAGE_DELETED` keys.
+3. Add refresh-token/logout/session-revocation before any production use.
+4. Provision PostgreSQL for a real deployed environment (still only a local
+   dev cluster) and wire `DATABASE_URL` via secrets, not a committed file.
+5. Push and confirm the GitHub Actions `i18n-validate` job is green on CI.

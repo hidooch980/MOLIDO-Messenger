@@ -1,6 +1,7 @@
 # Architecture
 
-Status: PHASE 0 — foundational scaffold only. Nothing below is deployed.
+Status: PHASE 2 — text chat is functional end-to-end against a local dev
+database. Nothing below is deployed to a real environment.
 
 ## Overview
 
@@ -21,10 +22,26 @@ apps/frontend     React + Vite web client.
   query/account/`Accept-Language` per the order in `I18N_ARCHITECTURE.md`.
 - `src/i18n/error-handler.ts` maps thrown `LocalizedError`s to a stable JSON
   error shape `{ code, params, locale }` — never a pre-rendered sentence.
-- PostgreSQL via Prisma (`apps/backend/prisma/schema.prisma`) — a `User`
-  model with bcrypt password hashing and JWT-based sessions
-  (`src/modules/auth`). Verified against a local dev cluster only; not yet
-  provisioned for a deployed environment — see `RISK_REGISTER.md`.
+- PostgreSQL via Prisma (`apps/backend/prisma/schema.prisma`) — `User`,
+  `Room`, `RoomMember`, `Message`. Bcrypt password hashing and JWT-based
+  sessions (`src/modules/auth`). Verified against a local dev cluster only;
+  not yet provisioned for a deployed environment — see `RISK_REGISTER.md`.
+- `src/modules/rooms`: create/list rooms, join/leave (REST), message
+  history (REST, paginated by `before`/`limit`). A message's `body` is
+  stored exactly as typed — no translation or normalization on write (spec
+  section 8).
+- Realtime chat: Socket.IO requires the same JWT as the REST API
+  (`io.use` handshake middleware) — there is no separate, weaker socket
+  auth. `chat:join` re-checks room membership server-side before
+  `socket.join`; `chat:message` persists via the same `postMessage()` the
+  REST layer would use, then broadcasts to the room.
+- System events (`GROUP_MEMBER_JOINED`, `GROUP_MEMBER_LEFT`) are persisted
+  as message rows carrying a `systemEventCode` + `systemEventName`, never a
+  pre-rendered sentence — a client renders `chat.system.<CODE>` in its own
+  locale (spec section 19). They are written by the REST join/leave routes,
+  not yet pushed live over the socket — a deliberate PHASE 2 scope cut (see
+  `RISK_REGISTER.md`): a client sees them on its next history fetch, not
+  instantly.
 - Redis (presence/pub-sub) is still not wired up.
 
 ## Frontend (`apps/frontend`)
@@ -51,7 +68,10 @@ work, not a half-built feature in this PHASE 0 commit.
 
 ## Explicitly deferred to later phases
 
-- Rooms/messages schema and migrations.
+- Live socket push of system join/leave events (currently REST-only, visible
+  on next history fetch).
+- Message edit/delete endpoints (schema has `editedAt`/`deletedAt`; no
+  routes yet).
 - Refresh tokens, logout, and session revocation.
 - WebRTC/SFU integration.
 - Push notification delivery pipeline.
