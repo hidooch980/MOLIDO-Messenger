@@ -21,9 +21,11 @@ apps/frontend     React + Vite web client.
   query/account/`Accept-Language` per the order in `I18N_ARCHITECTURE.md`.
 - `src/i18n/error-handler.ts` maps thrown `LocalizedError`s to a stable JSON
   error shape `{ code, params, locale }` — never a pre-rendered sentence.
-- No database is wired up yet (VERIFIED: `apps/backend` has no DB client
-  dependency). PostgreSQL + Redis are the planned choice — see
-  `RISK_REGISTER.md`.
+- PostgreSQL via Prisma (`apps/backend/prisma/schema.prisma`) — a `User`
+  model with bcrypt password hashing and JWT-based sessions
+  (`src/modules/auth`). Verified against a local dev cluster only; not yet
+  provisioned for a deployed environment — see `RISK_REGISTER.md`.
+- Redis (presence/pub-sub) is still not wired up.
 
 ## Frontend (`apps/frontend`)
 
@@ -49,8 +51,8 @@ work, not a half-built feature in this PHASE 0 commit.
 
 ## Explicitly deferred to later phases
 
-- Database schema and migrations.
-- Authentication (session/JWT) implementation.
+- Rooms/messages schema and migrations.
+- Refresh tokens, logout, and session revocation.
 - WebRTC/SFU integration.
 - Push notification delivery pipeline.
 - Admin panel.

@@ -2,6 +2,8 @@
   "AUTH_INVALID_CREDENTIALS": "Incorrect username or password.",
   "AUTH_SESSION_EXPIRED": "Your session has expired. Please log in again.",
   "AUTH_ACCOUNT_DISABLED": "This account has been disabled.",
+  "AUTH_USERNAME_TAKEN": "This username is already taken.",
+  "AUTH_EMAIL_TAKEN": "An account with this email already exists.",
   "MESSAGE_NOT_FOUND": "This message no longer exists.",
   "MESSAGE_FORBIDDEN": "You don't have permission to do this.",
   "MESSAGE_TOO_LONG": "Your message is too long.",

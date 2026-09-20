@@ -6,6 +6,7 @@ import { Server as SocketIOServer } from "socket.io";
 import { ENABLED_LOCALES, LOCALE_REGISTRY, LocalizedError } from "@molido/i18n";
 import { localeMiddleware } from "./i18n/middleware.js";
 import { localizedErrorHandler } from "./i18n/error-handler.js";
+import { authRouter } from "./modules/auth/routes.js";
 
 const app = express();
 app.use(helmet());
@@ -29,6 +30,8 @@ app.get("/api/i18n/locales", (req, res) => {
 app.get("/api/i18n/error-demo/:code", (req, res, next) => {
   next(new LocalizedError(req.params.code as never));
 });
+
+app.use("/api/auth", authRouter);
 
 app.use(localizedErrorHandler());
 

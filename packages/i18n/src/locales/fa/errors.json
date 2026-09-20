@@ -2,6 +2,8 @@
   "AUTH_INVALID_CREDENTIALS": "نام کاربری یا رمز عبور اشتباه است.",
   "AUTH_SESSION_EXPIRED": "نشست شما منقضی شده است. لطفاً دوباره وارد شوید.",
   "AUTH_ACCOUNT_DISABLED": "این حساب کاربری غیرفعال شده است.",
+  "AUTH_USERNAME_TAKEN": "این نام کاربری قبلاً استفاده شده است.",
+  "AUTH_EMAIL_TAKEN": "حسابی با این ایمیل قبلاً ثبت شده است.",
   "MESSAGE_NOT_FOUND": "این پیام دیگر وجود ندارد.",
   "MESSAGE_FORBIDDEN": "شما اجازه انجام این کار را ندارید.",
   "MESSAGE_TOO_LONG": "پیام شما بیش از حد طولانی است.",

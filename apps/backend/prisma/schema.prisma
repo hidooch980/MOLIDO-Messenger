@@ -1,0 +1,24 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// `localePreference` is a free-text locale code, validated against
+// packages/i18n's LOCALE_REGISTRY at the application layer — never a DB
+// enum. Adding a new supported language must never require a migration
+// (spec section 2).
+model User {
+  id               String   @id @default(uuid())
+  username         String   @unique
+  email            String   @unique
+  passwordHash     String
+  localePreference String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("users")
+}
