@@ -1,6 +1,6 @@
 # Master State
 
-Last updated: 2026-09-20 (PHASE 7)
+Last updated: 2026-09-20 (PHASE 8)
 
 ## Status legend
 
@@ -117,6 +117,14 @@ VERIFIED / OBSERVED / INFERRED / UNKNOWN / BLOCKED — see project conventions.
 | Full regression after refactor (rooms, chat, friends, presence, nudge, call) | VERIFIED (live browser test, fresh run) | Re-ran the same multi-user Playwright flow used in PHASE 4-6 against the new three-pane layout after truncating dev DB/Redis: room creation, live chat delivery, friend request/accept, presence dot, nudge, incoming/active video call all passed with fresh screenshots. |
 | A real bug found and fixed: empty-room preview showed "no rooms exist" text | FIXED | `RoomsPanel.tsx`'s chat-list row used `previewText(room, t) ?? t("no_rooms")` as its fallback — a room that exists but has no messages yet showed the "no rooms exist yet" string instead of "no messages yet". Added a dedicated `groups.no_messages_yet` key (fa+en) and fixed the fallback; re-verified live in a fresh screenshot showing the correct text. |
 
+## PHASE 8 — Live join/leave system events over the socket — LOCKED
+
+| Area | Status | Notes |
+|---|---|---|
+| Join/leave system events pushed live, not just on next history fetch | VERIFIED (live browser test) | Closes RISK_REGISTER.md risk 12. New `apps/backend/src/realtime/io.ts` holds the one Socket.IO server instance so REST route handlers (`POST /:roomId/join`/`/leave`, which have no socket of their own) can broadcast to the room, avoiding a circular import with `index.ts`. `rooms/routes.ts`'s new `announceSystemEvent()` helper persists the system message (unchanged `postSystemMessage`) and then emits it as a `chat:message` socket event to everyone currently in the room. |
+| Live verification | VERIFIED (live browser test) | alice opened a room (socket `chat:join`'d); bob joined the same room via the REST lobby-join button — alice's chat view showed "bob joined" live with no reload or refetch. bob then left via a direct REST call — alice's view showed "bob left" live, as a second system message, still with no reload. |
+| Full regression after this change | VERIFIED (live browser test, fresh run) | Re-ran rooms/chat, friend request/accept, presence, nudge, and video call invite/accept/active/hang-up together with fresh users after a clean DB/Redis reset — all passed, confirming the new `realtime/io.ts` wiring didn't disturb the existing socket-event handlers in `index.ts`. |
+
 ## Regression baseline
 
 fa/RTL and en/LTR: verified via `i18n:validate` (key/placeholder parity,
@@ -127,16 +135,16 @@ negotiation, not just DOM/socket assertions). Each phase's fixes were
 re-verified against the *previous* phase's browser tests before being
 called done — no known regression as of this update.
 
-## Immediate next steps (candidate PHASE 7)
+## Immediate next steps (candidate PHASE 9)
 
-1. Push system join/leave events live over the socket, not just on next
-   history fetch, and add a browser test that actually exercises one.
-2. Add message edit/delete routes and UI using the existing
+1. Add message edit/delete routes and UI using the existing
    `editedAt`/`deletedAt` columns and `chat.system.MESSAGE_EDITED`/
    `MESSAGE_DELETED` keys.
-3. Design an invite mechanism for private rooms.
-4. Add a TURN server for reliable call connectivity across restrictive NATs.
-5. Add refresh-token/logout/session-revocation before any production use.
-6. Provision PostgreSQL + Redis for a real deployed environment (still only
+2. Design an invite mechanism for private rooms.
+3. Add a TURN server for reliable call connectivity across restrictive NATs.
+4. Add refresh-token/logout/session-revocation before any production use.
+5. Provision PostgreSQL + Redis for a real deployed environment (still only
    local dev instances) and wire secrets, not committed files.
-7. Push and confirm the GitHub Actions `i18n-validate` job is green on CI.
+6. Push and confirm the GitHub Actions `i18n-validate` job is green on CI.
+7. Add per-user rate limiting on `chat:message`/`friend:nudge`/call
+   signaling (RISK_REGISTER.md risks 14/18/23).

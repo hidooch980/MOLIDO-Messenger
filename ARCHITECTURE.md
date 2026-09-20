@@ -49,10 +49,16 @@ apps/frontend     React + Vite web client.
 - System events (`GROUP_MEMBER_JOINED`, `GROUP_MEMBER_LEFT`) are persisted
   as message rows carrying a `systemEventCode` + `systemEventName`, never a
   pre-rendered sentence — a client renders `chat.system.<CODE>` in its own
-  locale (spec section 19). They are written by the REST join/leave routes,
-  not yet pushed live over the socket — a deliberate PHASE 2 scope cut (see
-  `RISK_REGISTER.md`): a client sees them on its next history fetch, not
-  instantly.
+  locale (spec section 19). They are written by the REST join/leave routes
+  and, since PHASE 8, pushed live to the room over the socket the same
+  instant they're persisted (`rooms/routes.ts`'s `announceSystemEvent()`),
+  not just picked up on a client's next history fetch. A REST route has no
+  socket of its own, so `src/realtime/io.ts` holds the one shared
+  Socket.IO server instance for route handlers to broadcast through,
+  without a circular import against `index.ts` (which owns `io` and calls
+  `setIO(io)` once at startup). This still only reaches sockets on *this*
+  backend process — multi-instance delivery needs Redis pub/sub, tracked
+  in `RISK_REGISTER.md` risk 17.
 - `src/modules/friends`: Yahoo-style buddy list. `Friendship` is a
   free-text-status (`pending`/`accepted`) request/accept flow —
   `POST/GET /api/friends/requests`, `POST /api/friends/requests/:id/accept|decline`,

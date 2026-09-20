@@ -1,8 +1,27 @@
 import { Router } from "express";
-import { LocalizedError } from "@molido/i18n";
+import { LocalizedError, type SystemEventCode } from "@molido/i18n";
 import { requireAuth } from "../../i18n/require-auth.js";
+import { getIO } from "../../realtime/io.js";
 import { createRoomSchema, historyQuerySchema, publicRoomsQuerySchema } from "./schemas.js";
 import { createRoom, listMyRooms, listPublicRooms, joinRoom, leaveRoom, getHistory, postSystemMessage } from "./service.js";
+
+/**
+ * Persists (via `postSystemMessage`) and pushes a join/leave system event
+ * live to every socket currently in the room — previously these only ever
+ * appeared on a client's *next* history fetch (RISK_REGISTER.md risk 12).
+ */
+async function announceSystemEvent(roomId: string, code: SystemEventCode, actorName: string) {
+  const message = await postSystemMessage(roomId, code, actorName);
+  getIO().to(roomId).emit("chat:message", {
+    id: message.id,
+    roomId: message.roomId,
+    senderId: null,
+    body: null,
+    systemEventCode: message.systemEventCode,
+    systemEventName: message.systemEventName,
+    createdAt: message.createdAt.toISOString(),
+  });
+}
 
 export const roomsRouter = Router();
 roomsRouter.use(requireAuth());
@@ -44,7 +63,7 @@ roomsRouter.get("/public", async (req, res, next) => {
 roomsRouter.post("/:roomId/join", async (req, res, next) => {
   try {
     const room = await joinRoom(req.params.roomId, req.auth!.sub);
-    await postSystemMessage(room.id, "GROUP_MEMBER_JOINED", req.auth!.username);
+    await announceSystemEvent(room.id, "GROUP_MEMBER_JOINED", req.auth!.username);
     res.status(204).end();
   } catch (err) {
     next(err);
@@ -54,7 +73,7 @@ roomsRouter.post("/:roomId/join", async (req, res, next) => {
 roomsRouter.post("/:roomId/leave", async (req, res, next) => {
   try {
     await leaveRoom(req.params.roomId, req.auth!.sub);
-    await postSystemMessage(req.params.roomId, "GROUP_MEMBER_LEFT", req.auth!.username);
+    await announceSystemEvent(req.params.roomId, "GROUP_MEMBER_LEFT", req.auth!.username);
     res.status(204).end();
   } catch (err) {
     next(err);

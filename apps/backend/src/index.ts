@@ -13,6 +13,7 @@ import { verifyToken, type AuthTokenPayload } from "./modules/auth/service.js";
 import { requireMembership, postMessage } from "./modules/rooms/service.js";
 import { listFriendUserIds, areFriends } from "./modules/friends/service.js";
 import { registerConnection, removeConnection, setManualState, isManualPresenceState } from "./presence/service.js";
+import { setIO } from "./realtime/io.js";
 
 const app = express();
 app.use(helmet());
@@ -46,6 +47,7 @@ app.use(localizedErrorHandler());
 
 const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, { cors: { origin: "*" } });
+setIO(io);
 
 // Every realtime connection must present the same JWT the REST API uses —
 // there is no separate, weaker "socket auth".
