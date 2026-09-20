@@ -1,6 +1,6 @@
 # Master State
 
-Last updated: 2026-09-20 (PHASE 5)
+Last updated: 2026-09-20 (PHASE 6)
 
 ## Status legend
 
@@ -87,17 +87,36 @@ VERIFIED / OBSERVED / INFERRED / UNKNOWN / BLOCKED — see project conventions.
 | Chat room UI (history load, join, send/receive) | VERIFIED (live browser test) | After fixing the socket-state bug below: alice sent a Persian message from her chat view; bob's browser showed it live, with `chat-sender`/`chat-body` populated from the real socket payload. |
 | System event rendering (`chat.system.<CODE>`) | VERIFIED (code) | Wired in `ChatRoom.tsx`; not separately exercised by the browser test above (no join/leave event happened to fire during it). |
 | A real bug found and fixed: socket stored in a `ref`, not state | FIXED | `SocketContext` held the connected socket in `useRef`, so context consumers only picked it up when *some other* state change (like a buddy `presence:update`) happened to force a re-render. The first version of the rooms/chat test failed exactly here — bob's browser never received alice's message — traced to `useSocket().socket` being `null` the whole time in the room view (no friend traffic to incidentally re-render it). Fixed by switching to `useState`. Re-ran the PHASE 4 buddy/nudge browser test afterward to confirm no regression — still passes. Full detail in `ARCHITECTURE.md`. |
+| Risk 20 (pluralization) — actually triggered, not just theoretical | FIXED | Building the lobby's `t("member_count", { count })` call rendered the literal string `"member_count"` in a real browser check, not the assumed-safe "not yet triggered" status this risk had after PHASE 4. Fixed by setting i18next's `pluralSeparator: "."`; re-verified live afterward showing `"1 عضو"`. |
+| A second raw-error-code leak found and fixed | FIXED | `ChatRoom` rendered a raw server code (e.g. `"GROUP_FORBIDDEN"`) directly instead of translating it — the same anti-pattern the whole i18n error-code architecture exists to prevent. Fixed, and the same missing error handling/translation was added to `RoomsPanel`'s create/join actions, which had none at all. |
+
+## PHASE 6 — 1:1 voice/video calls (WebRTC) — LOCKED
+
+| Area | Status | Notes |
+|---|---|---|
+| New `calls` i18n namespace, fa+en | VERIFIED | `npm run i18n:validate` passes across 11 namespaces. |
+| Backend call signaling relay | VERIFIED (live browser test) | `call:invite/accept/decline/end/offer/answer/ice-candidate`, each gated by `areFriends()` via a shared `forwardIfFriends()` helper — server never touches media, only relays SDP/ICE between the two participants' personal rooms. |
+| Video call: invite → accept → live media both directions | VERIFIED (live browser test, real media) | Two Chromium contexts with `--use-fake-device-for-media-stream`/`--use-fake-ui-for-media-stream` (synthetic but real MediaStreamTrack data, not mocked JS): alice video-called bob, bob accepted, both browsers' `.call-video` elements had a `srcObject` with live tracks after negotiation, confirmed by direct DOM/track inspection, not assumption. |
+| Voice-only call | VERIFIED (live browser test) | Same flow with `video: false`; the incoming-call text correctly said "calling" not "video calling" — namespace key selection verified, not just code review. |
+| Hang-up cleanup | VERIFIED (live browser test) | alice ended an active call; bob's call UI cleared (`.call-active` count reached 0) without bob taking any action — confirms the `call:ended` listener actually tears down state on the receiving side. |
+| Decline flow | VERIFIED (live browser test) | bob declined; alice's overlay cleared and showed a toast. |
+| A real bug found and fixed: decline toast missing the caller's name | FIXED | `CallOverlay` read `peer?.username` for the post-call message, but `cleanup()` (called immediately before render) had already nulled `peer` — the toast said "` تماس را رد کرد.`" with an empty name in the first live test run. Fixed by capturing `lastPeerUsername` inside `cleanup()` itself, before `peer` is cleared; re-verified live showing the full `"declinebob تماس را رد کرد."`. |
+| Full four-flow regression check after all PHASE 6 changes | VERIFIED (live browser test) | Rooms/chat, member count, buddy presence, and nudge re-run together with fresh users after `CallProvider` was added to the app tree — all still pass. |
+| TURN server (cross-restrictive-NAT reliability) | NOT STARTED | STUN-only (`stun:stun.l.google.com:19302`); works for open-NAT/same-network peers (as verified), not guaranteed across symmetric NATs/firewalls. |
+| Multi-party group calls (SFU/mediasoup) | NOT STARTED | Explicitly deferred — a mesh of direct peer connections doesn't scale past a handful of participants; see `ARCHITECTURE.md`. |
+| Call history / missed-call notifications | NOT STARTED | |
 
 ## Regression baseline
 
 fa/RTL and en/LTR: verified via `i18n:validate` (key/placeholder parity,
-across 10 namespaces including `friends`) plus every PHASE 1–5 live smoke
-test above, run in both API-only scripts (PHASE 1–3) and a real browser
-(PHASE 4–5). After the PHASE 5 socket-state fix, the PHASE 4 buddy/presence/
-nudge browser test was re-run and still passes — no regression.
-(tracked further in `RISK_REGISTER.md`).
+across 11 namespaces including `friends` and `calls`) plus every PHASE 1–6
+live smoke test above, run in both API-only scripts (PHASE 1–3) and a real
+browser (PHASE 4–6, PHASE 6 additionally exercising real WebRTC media
+negotiation, not just DOM/socket assertions). Each phase's fixes were
+re-verified against the *previous* phase's browser tests before being
+called done — no known regression as of this update.
 
-## Immediate next steps (candidate PHASE 6)
+## Immediate next steps (candidate PHASE 7)
 
 1. Push system join/leave events live over the socket, not just on next
    history fetch, and add a browser test that actually exercises one.
@@ -105,8 +124,7 @@ nudge browser test was re-run and still passes — no regression.
    `editedAt`/`deletedAt` columns and `chat.system.MESSAGE_EDITED`/
    `MESSAGE_DELETED` keys.
 3. Design an invite mechanism for private rooms.
-4. Resolve the i18next pluralization-key mismatch (risk 20 in
-   `RISK_REGISTER.md`) before any UI uses a plural string.
+4. Add a TURN server for reliable call connectivity across restrictive NATs.
 5. Add refresh-token/logout/session-revocation before any production use.
 6. Provision PostgreSQL + Redis for a real deployed environment (still only
    local dev instances) and wire secrets, not committed files.

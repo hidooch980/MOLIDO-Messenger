@@ -427,6 +427,71 @@ button.secondary {
   flex: 1;
 }
 
+.call-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 22, 38, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.call-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  min-width: 260px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.call-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.call-active {
+  min-width: 320px;
+}
+
+.call-videos {
+  position: relative;
+  margin-block: 10px;
+}
+
+.call-video {
+  width: 100%;
+  border-radius: 8px;
+  background: #000;
+}
+
+.call-videos .call-video + .call-video {
+  position: absolute;
+  bottom: 8px;
+  inset-inline-end: 8px;
+  width: 90px;
+  border: 2px solid #fff;
+}
+
+.call-status {
+  font-size: 12px;
+  color: #6b6280;
+}
+
+.call-toast {
+  position: fixed;
+  bottom: 20px;
+  inset-inline-start: 20px;
+  background: var(--molido-violet-dark);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
@@ -436,7 +501,8 @@ button.secondary {
     color: #ece7f7;
   }
   .app-shell,
-  .auth-card {
+  .auth-card,
+  .call-card {
     background: #241c33;
     border-color: #4a2a80;
   }

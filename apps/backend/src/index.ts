@@ -111,6 +111,49 @@ io.on("connection", (socket) => {
     }
   });
 
+  // 1:1 WebRTC signaling relay. The server never touches media — it only
+  // forwards SDP offers/answers and ICE candidates between two friends'
+  // personal rooms, gated the same way as friend:nudge.
+  async function forwardIfFriends<T extends { toUserId: string }>(
+    payload: T,
+    event: string,
+    ack?: (error?: string) => void
+  ) {
+    try {
+      const isFriend = await areFriends(auth.sub, payload.toUserId);
+      if (!isFriend) throw new LocalizedError("FRIEND_FORBIDDEN");
+      const { toUserId, ...rest } = payload;
+      io.to(personalRoom(toUserId)).emit(event, { ...rest, fromUserId: auth.sub, fromUsername: auth.username });
+      ack?.();
+    } catch (err) {
+      ack?.(err instanceof LocalizedError ? err.code : "UNKNOWN_ERROR");
+    }
+  }
+
+  socket.on("call:invite", (payload: { toUserId: string; video: boolean }, ack?: (error?: string) => void) =>
+    forwardIfFriends(payload, "call:incoming", ack)
+  );
+  socket.on("call:accept", (payload: { toUserId: string }, ack?: (error?: string) => void) =>
+    forwardIfFriends(payload, "call:accepted", ack)
+  );
+  socket.on("call:decline", (payload: { toUserId: string }, ack?: (error?: string) => void) =>
+    forwardIfFriends(payload, "call:declined", ack)
+  );
+  socket.on("call:end", (payload: { toUserId: string }, ack?: (error?: string) => void) =>
+    forwardIfFriends(payload, "call:ended", ack)
+  );
+  socket.on("call:offer", (payload: { toUserId: string; sdp: unknown }, ack?: (error?: string) => void) =>
+    forwardIfFriends(payload, "call:offer", ack)
+  );
+  socket.on("call:answer", (payload: { toUserId: string; sdp: unknown }, ack?: (error?: string) => void) =>
+    forwardIfFriends(payload, "call:answer", ack)
+  );
+  socket.on(
+    "call:ice-candidate",
+    (payload: { toUserId: string; candidate: unknown }, ack?: (error?: string) => void) =>
+      forwardIfFriends(payload, "call:ice-candidate", ack)
+  );
+
   socket.on("chat:join", async (roomId: string, ack?: (error?: string) => void) => {
     try {
       await requireMembership(roomId, auth.sub);

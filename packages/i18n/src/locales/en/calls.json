@@ -1,0 +1,18 @@
+{
+  "voice_call": "Voice call",
+  "video_call": "Video call",
+  "incoming_call": "{name} is calling you…",
+  "incoming_video_call": "{name} is video calling you…",
+  "calling": "Calling {name}…",
+  "accept": "Accept",
+  "decline": "Decline",
+  "end_call": "End call",
+  "declined": "{name} declined the call.",
+  "ended": "Call ended.",
+  "connecting": "Connecting…",
+  "unsupported": "Your browser doesn't support calls, or camera/microphone access was denied.",
+  "mute": "Mute",
+  "unmute": "Unmute",
+  "camera_on": "Turn camera on",
+  "camera_off": "Turn camera off"
+}

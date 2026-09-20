@@ -1,9 +1,9 @@
 # Architecture
 
-Status: PHASE 5 — rooms/chat now have a working frontend UI alongside the
-buddy list, presence, and nudge, all verified in a real browser on top of
-local dev PostgreSQL + Redis. Nothing below is deployed to a real
-environment.
+Status: PHASE 6 — 1:1 voice/video calls (WebRTC, signaled over the existing
+Socket.IO connection) now work alongside rooms/chat, the buddy list,
+presence, and nudge, all verified in a real browser with actual media
+negotiation. Nothing below is deployed to a real environment.
 
 ## Overview
 
@@ -72,6 +72,11 @@ apps/frontend     React + Vite web client.
   `presence:set` lets a client manually switch online/away/busy.
   `friend:nudge` (Yahoo's "buzz") is gated by `areFriends()` — delivered
   only between accepted friends, straight to the target's personal room.
+- 1:1 call signaling (`call:invite`/`accept`/`decline`/`end`/`offer`/
+  `answer`/`ice-candidate`): the server relays SDP/ICE payloads between the
+  two participants' personal rooms and never touches media itself — every
+  event goes through the same `areFriends()` gate as `friend:nudge`,
+  implemented once via a shared `forwardIfFriends()` helper in `index.ts`.
 
 ## Frontend (`apps/frontend`)
 
@@ -102,6 +107,17 @@ apps/frontend     React + Vite web client.
   Socket.IO room (`chat:join`), sends/receives `chat:message` live, and
   renders system events via `chat.system.<CODE>` instead of a hardcoded
   sentence.
+- `src/call/CallContext.tsx`: the 1:1 call state machine
+  (`idle`/`outgoing`/`incoming`/`active`), one `RTCPeerConnection` at a
+  time, `getUserMedia` for local audio/video, an ICE-candidate queue for
+  candidates that arrive before the remote description is set, and a
+  `lastPeerUsername` kept alive past `cleanup()` so a decline/error message
+  can still say whose call it was (see the PHASE 6 bug note below).
+  `src/components/CallOverlay.tsx` renders the incoming/outgoing/active
+  call card and the two `<video>` elements (remote large, local
+  picture-in-picture) — a plain public STUN server
+  (`stun:stun.l.google.com:19302`), no TURN, so cross-restrictive-NAT
+  reliability isn't guaranteed (see `RISK_REGISTER.md`).
 
 ### Real bugs this UI work found (fixed, not just noted)
 
@@ -135,19 +151,37 @@ surfaced bugs that had been sitting undetected since earlier phases:
    two-browser chat test showed one side never receiving a live message;
    fixed by moving the socket into `useState` so connecting always
    triggers the render that updates every consumer.
+4. (PHASE 6) The decline-call toast rendered `friends.declined`'s `{name}`
+   as empty, because `CallOverlay` read `peer?.username` for the message,
+   but `cleanup()` (called right before the error renders) had already set
+   `peer` to `null`. Caught by an actual browser decline test showing the
+   toast text missing the name. Fixed by capturing the departing peer's
+   username into a separate `lastPeerUsername` state inside `cleanup()`
+   itself, read instead of `peer` for post-call messages.
 
 ## Realtime media (voice/video, Paltalk-style rooms)
 
-Not yet implemented. Planned: WebRTC with an SFU (mediasoup) so a room
-scales past 1:1 calls; Socket.IO carries signaling. This is explicit future
-work, not a half-built feature in this PHASE 0 commit.
+1:1 calls (audio-only or audio+video) work end-to-end via WebRTC, signaled
+over the existing Socket.IO connection — see `src/call/CallContext.tsx`
+above and the backend signaling relay above. **Multi-party rooms are still
+not implemented**: a Paltalk-style room with several simultaneous
+audio/video participants needs an SFU (mediasoup planned) because a mesh of
+direct peer connections doesn't scale past a handful of participants. This
+is explicit, deliberate future work, not a half-built feature.
 
 ## Why this stack
 
 - Socket.IO: mature, handles reconnection/room semantics out of the box —
-  avoids reinventing presence/room primitives for an MVP.
-- mediasoup (planned): self-hostable SFU, avoids per-minute vendor costs of
-  managed WebRTC platforms for a Paltalk-style multi-party room.
+  avoids reinventing presence/room primitives for an MVP; doubles as the
+  WebRTC signaling channel so no separate signaling server is needed for
+  1:1 calls.
+- Plain WebRTC (`RTCPeerConnection`) for 1:1 calls: no extra server-side
+  media infrastructure needed — the browsers exchange media directly once
+  signaling completes.
+- mediasoup (planned, multi-party only): self-hostable SFU, avoids
+  per-minute vendor costs of managed WebRTC platforms for a Paltalk-style
+  multi-party room, and avoids the mesh-doesn't-scale problem 1:1 calls
+  don't have.
 - PostgreSQL: relational integrity for accounts/rooms/messages/friendships.
   Redis: live presence state — chosen over storing "online/offline" in
   Postgres because it's ephemeral, per-connection state that must vanish
@@ -170,7 +204,10 @@ work, not a half-built feature in this PHASE 0 commit.
 - Redis pub/sub across multiple backend instances — a single process is
   the only one broadcasting today; horizontal scaling needs this.
 - Refresh tokens, logout, and session revocation.
-- WebRTC/SFU integration.
+- Multi-party group calls (mediasoup/SFU) — 1:1 calls shipped in PHASE 6.
+- TURN server for reliable cross-NAT call connectivity (currently STUN-only).
+- Call quality/network adaptation, screen sharing, call history/missed-call
+  notifications.
 - Push notification delivery pipeline.
 - Admin panel.
 - Revenue/billing (ships disabled — `REVENUE_ENABLED=false` — by default).

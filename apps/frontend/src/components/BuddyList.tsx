@@ -2,14 +2,16 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../auth/AuthContext.js";
 import { useSocket } from "../socket/SocketContext.js";
+import { useCall } from "../call/CallContext.js";
 import { api, ApiError } from "../api/client.js";
 import type { Friend, FriendRequest } from "../api/types.js";
 import { PresenceDot } from "./PresenceDot.js";
 
 export function BuddyList() {
-  const { t } = useTranslation(["friends", "errors", "common"]);
+  const { t } = useTranslation(["friends", "errors", "common", "calls"]);
   const { token } = useAuth();
   const { socket, presenceOverrides } = useSocket();
+  const { startCall, state: callState } = useCall();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [addUsername, setAddUsername] = useState("");
@@ -52,6 +54,10 @@ export function BuddyList() {
 
   function handleNudge(friendId: string) {
     socket?.emit("friend:nudge", friendId);
+  }
+
+  function handleCall(friendId: string, friendUsername: string, video: boolean) {
+    void startCall(friendId, friendUsername, video);
   }
 
   const friendsWithLivePresence = friends.map((f) => ({
@@ -101,6 +107,24 @@ export function BuddyList() {
               <span className="buddy-name">{f.username}</span>
               {f.statusMessage && <span className="buddy-status">{f.statusMessage}</span>}
             </div>
+            <button
+              type="button"
+              className="nudge-button"
+              disabled={f.presence === "offline" || callState !== "idle"}
+              onClick={() => handleCall(f.id, f.username, false)}
+              title={t("calls:voice_call")}
+            >
+              📞
+            </button>
+            <button
+              type="button"
+              className="nudge-button"
+              disabled={f.presence === "offline" || callState !== "idle"}
+              onClick={() => handleCall(f.id, f.username, true)}
+              title={t("calls:video_call")}
+            >
+              🎥
+            </button>
             <button
               type="button"
               className="nudge-button"

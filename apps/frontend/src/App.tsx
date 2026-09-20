@@ -2,12 +2,14 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AuthProvider, useAuth } from "./auth/AuthContext.js";
 import { SocketProvider } from "./socket/SocketContext.js";
+import { CallProvider } from "./call/CallContext.js";
 import { LanguageSwitcher } from "./components/LanguageSwitcher.js";
 import { LoginForm } from "./components/LoginForm.js";
 import { StatusBar } from "./components/StatusBar.js";
 import { BuddyList } from "./components/BuddyList.js";
 import { RoomsPanel } from "./components/RoomsPanel.js";
 import { NudgeToast } from "./components/NudgeToast.js";
+import { CallOverlay } from "./components/CallOverlay.js";
 
 type MainTab = "buddies" | "rooms";
 
@@ -32,13 +34,20 @@ function MainShell() {
       </nav>
       {tab === "buddies" ? <BuddyList /> : <RoomsPanel />}
       <NudgeToast />
+      <CallOverlay />
     </div>
   );
 }
 
 function AppContent() {
   const { token } = useAuth();
-  return token ? <MainShell /> : <LoginForm />;
+  return token ? (
+    <CallProvider>
+      <MainShell />
+    </CallProvider>
+  ) : (
+    <LoginForm />
+  );
 }
 
 export default function App() {
