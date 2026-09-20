@@ -14,6 +14,7 @@
   "all_categories": "All categories",
   "name_placeholder": "Room name",
   "no_rooms": "No rooms yet.",
+  "no_messages_yet": "No messages yet",
   "member_count.one": "{count} member",
   "member_count.other": "{count} members",
   "category.general": "General",

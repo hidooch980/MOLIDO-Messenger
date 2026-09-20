@@ -1,50 +1,45 @@
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import { AuthProvider, useAuth } from "./auth/AuthContext.js";
 import { SocketProvider } from "./socket/SocketContext.js";
 import { CallProvider } from "./call/CallContext.js";
-import { LanguageSwitcher } from "./components/LanguageSwitcher.js";
 import { LoginForm } from "./components/LoginForm.js";
 import { StatusBar } from "./components/StatusBar.js";
 import { BuddyList } from "./components/BuddyList.js";
 import { RoomsPanel } from "./components/RoomsPanel.js";
+import { ChatRoom } from "./components/ChatRoom.js";
+import { WelcomeHero } from "./components/WelcomeHero.js";
+import { IconRail, type RailView } from "./components/IconRail.js";
 import { NudgeToast } from "./components/NudgeToast.js";
 import { CallOverlay } from "./components/CallOverlay.js";
-
-type MainTab = "buddies" | "rooms";
+import type { Room } from "./api/types.js";
 
 function MainShell() {
-  const { t } = useTranslation("common");
-  const [tab, setTab] = useState<MainTab>("buddies");
+  const [view, setView] = useState<RailView>("chats");
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+
+  function handleViewChange(next: RailView) {
+    setView(next);
+    setSelectedRoom(null);
+  }
 
   return (
-    <div className="app-shell classic">
-      {/* Decorative window chrome, in the spirit of the classic desktop
-          messenger era — not real OS window controls, just the look. */}
-      <div className="title-bar">
-        <span className="title-bar-text">{t("app_name")}</span>
-        <span className="title-bar-controls" aria-hidden="true">
-          <span>—</span>
-          <span>▢</span>
-          <span>×</span>
-        </span>
+    <div className="app-shell workspace">
+      <IconRail view={view} onChange={handleViewChange} />
+      <div className="list-pane">
+        <StatusBar />
+        {view === "chats" ? (
+          <RoomsPanel selectedRoomId={selectedRoom?.id ?? null} onSelectRoom={setSelectedRoom} />
+        ) : (
+          <BuddyList />
+        )}
       </div>
-      <div className="menu-bar">
-        <span>{t("tabs.buddies")}</span>
-        <span>{t("tabs.rooms")}</span>
-        <span className="menu-bar-spacer" />
-        <LanguageSwitcher />
+      <div className="content-pane">
+        {view === "chats" && selectedRoom ? (
+          <ChatRoom room={selectedRoom} onBack={() => setSelectedRoom(null)} />
+        ) : (
+          <WelcomeHero />
+        )}
       </div>
-      <StatusBar />
-      <nav className="main-tabs">
-        <button type="button" className={tab === "buddies" ? "active" : ""} onClick={() => setTab("buddies")}>
-          {t("tabs.buddies")}
-        </button>
-        <button type="button" className={tab === "rooms" ? "active" : ""} onClick={() => setTab("rooms")}>
-          {t("tabs.rooms")}
-        </button>
-      </nav>
-      {tab === "buddies" ? <BuddyList /> : <RoomsPanel />}
       <NudgeToast />
       <CallOverlay />
     </div>

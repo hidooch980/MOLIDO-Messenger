@@ -6,6 +6,7 @@ import { useSocket } from "../socket/SocketContext.js";
 import { api } from "../api/client.js";
 import { Avatar } from "./Avatar.js";
 import { Icon } from "./Icon.js";
+import { LanguageSwitcher } from "./LanguageSwitcher.js";
 
 export function StatusBar() {
   const { t } = useTranslation(["friends", "common", "auth"]);
@@ -48,9 +49,12 @@ export function StatusBar() {
         />
         <button type="submit">{t("common:save")}</button>
       </form>
-      <button type="button" className="link" onClick={logout}>
-        <Icon name="logout" size={13} /> {t("auth:logout")}
-      </button>
+      <div className="status-bar-footer">
+        <LanguageSwitcher />
+        <button type="button" className="link" onClick={logout}>
+          <Icon name="logout" size={13} /> {t("auth:logout")}
+        </button>
+      </div>
     </div>
   );
 }

@@ -19,10 +19,19 @@ export async function listMyRooms(userId: string) {
   const rooms = await prisma.room.findMany({
     where: { members: { some: { userId } } },
     orderBy: { updatedAt: "desc" },
-    include: { _count: { select: { members: true } } },
+    include: {
+      _count: { select: { members: true } },
+      // One most-recent message per room, for the chat-list preview line —
+      // real data (sender/body/system event), never a placeholder.
+      messages: { take: 1, orderBy: { createdAt: "desc" } },
+    },
   });
 
-  return rooms.map(({ _count, ...room }) => ({ ...room, memberCount: _count.members }));
+  return rooms.map(({ _count, messages, ...room }) => ({
+    ...room,
+    memberCount: _count.members,
+    lastMessage: messages[0] ?? null,
+  }));
 }
 
 /**

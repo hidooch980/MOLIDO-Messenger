@@ -1,6 +1,6 @@
 # Master State
 
-Last updated: 2026-09-20 (PHASE 6)
+Last updated: 2026-09-20 (PHASE 7)
 
 ## Status legend
 
@@ -105,6 +105,17 @@ VERIFIED / OBSERVED / INFERRED / UNKNOWN / BLOCKED — see project conventions.
 | TURN server (cross-restrictive-NAT reliability) | NOT STARTED | STUN-only (`stun:stun.l.google.com:19302`); works for open-NAT/same-network peers (as verified), not guaranteed across symmetric NATs/firewalls. |
 | Multi-party group calls (SFU/mediasoup) | NOT STARTED | Explicitly deferred — a mesh of direct peer connections doesn't scale past a handful of participants; see `ARCHITECTURE.md`. |
 | Call history / missed-call notifications | NOT STARTED | |
+
+## PHASE 7 — "Modern Mode" 3D visual redesign (three-pane workspace) — LOCKED
+
+| Area | Status | Notes |
+|---|---|---|
+| Three-pane workspace layout (icon rail / list pane / content pane) | VERIFIED (live browser test) | `App.tsx`'s `MainShell` now lifts `selectedRoom` state above `RoomsPanel` so the content pane can render either `ChatRoom` or a new `WelcomeHero` empty state; matches the user-approved reference mockup (Claude Artifact `HJ1fKd3DwcKeNdMERduWNL`). |
+| Icon rail (`IconRail.tsx`) | VERIFIED (code) | Deliberately limited to the two real nav destinations (chats/contacts) plus a decorative logo — no dead icons for unbuilt features, per this project's "no placeholder UI" rule. |
+| Chat-list last-message preview | VERIFIED (live browser test) | Backend `listMyRooms()` now includes each room's most recent `Message`; frontend `previewText()` renders it (translating `chat.system.*` codes for system events) or the sender's raw body. |
+| Dark neon "3D" visual theme (glossy avatars, layered shadows) | VERIFIED (live browser test) | Full `styles.css` rewrite: `.avatar::before` radial-gradient highlight + layered `box-shadow` for a glossy 3D look, applied consistently to buddy list, room list, and call UI avatars. |
+| Full regression after refactor (rooms, chat, friends, presence, nudge, call) | VERIFIED (live browser test, fresh run) | Re-ran the same multi-user Playwright flow used in PHASE 4-6 against the new three-pane layout after truncating dev DB/Redis: room creation, live chat delivery, friend request/accept, presence dot, nudge, incoming/active video call all passed with fresh screenshots. |
+| A real bug found and fixed: empty-room preview showed "no rooms exist" text | FIXED | `RoomsPanel.tsx`'s chat-list row used `previewText(room, t) ?? t("no_rooms")` as its fallback — a room that exists but has no messages yet showed the "no rooms exist yet" string instead of "no messages yet". Added a dedicated `groups.no_messages_yet` key (fa+en) and fixed the fallback; re-verified live in a fresh screenshot showing the correct text. |
 
 ## Regression baseline
 

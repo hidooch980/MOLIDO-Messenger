@@ -37,6 +37,13 @@ export interface FriendRequest {
   requester: PublicProfile;
 }
 
+export interface RoomLastMessage {
+  body: string | null;
+  systemEventCode?: string | null;
+  systemEventName?: string | null;
+  createdAt: string;
+}
+
 export interface Room {
   id: string;
   name: string;
@@ -47,6 +54,8 @@ export interface Room {
   createdAt: string;
   updatedAt: string;
   memberCount?: number;
+  /** Only populated by GET /api/rooms (the "my rooms" list), not the public lobby. */
+  lastMessage?: RoomLastMessage | null;
 }
 
 export interface ChatMessage {

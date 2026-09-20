@@ -4,32 +4,30 @@ import { ROOM_CATEGORIES, type RoomCategory } from "@molido/i18n";
 import { useAuth } from "../auth/AuthContext.js";
 import { api, ApiError } from "../api/client.js";
 import type { Room } from "../api/types.js";
-import { ChatRoom } from "./ChatRoom.js";
+import { Avatar } from "./Avatar.js";
 import { Icon } from "./Icon.js";
 
 type Tab = "mine" | "lobby";
 
-// Distinct per-category dot colors, matching the reference's room list
-// where each room's dot color differs — a purely presentational mapping,
-// not a data model change.
-const CATEGORY_DOT_COLOR: Record<string, string> = {
-  general: "#3b5bdb",
-  sports: "#2fbf4f",
-  music: "#d9364a",
-  movies: "#9c27b0",
-  gaming: "#e0a800",
-  tech: "#00acc1",
-  dating: "#e91e8c",
-};
+interface RoomsPanelProps {
+  selectedRoomId: string | null;
+  onSelectRoom: (room: Room) => void;
+}
 
-export function RoomsPanel() {
-  const { t } = useTranslation(["groups", "common", "errors"]);
+function previewText(room: Room, t: (key: string, opts?: Record<string, unknown>) => string): string | null {
+  const last = room.lastMessage;
+  if (!last) return null;
+  if (last.systemEventCode) return t(`chat:system.${last.systemEventCode}`, { name: last.systemEventName });
+  return last.body;
+}
+
+export function RoomsPanel({ selectedRoomId, onSelectRoom }: RoomsPanelProps) {
+  const { t } = useTranslation(["groups", "common", "errors", "chat"]);
   const { token } = useAuth();
   const [tab, setTab] = useState<Tab>("mine");
   const [myRooms, setMyRooms] = useState<Room[]>([]);
   const [publicRooms, setPublicRooms] = useState<Room[]>([]);
   const [category, setCategory] = useState<RoomCategory | "">("");
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -50,6 +48,12 @@ export function RoomsPanel() {
     if (tab === "lobby") void refreshLobby();
   }, [tab, refreshLobby]);
 
+  // A selection made elsewhere (e.g. just created/joined) can change this
+  // list's membership/last-message — refresh whenever it changes.
+  useEffect(() => {
+    void refreshMine();
+  }, [selectedRoomId, refreshMine]);
+
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -57,7 +61,7 @@ export function RoomsPanel() {
       const room = await api.post<Room>("/api/rooms", { name }, { token });
       setName("");
       await refreshMine();
-      setSelectedRoom(room);
+      onSelectRoom(room);
     } catch (err) {
       setError(err instanceof ApiError ? t(`errors:${err.code}` as never) : t("errors:UNKNOWN_ERROR" as never));
     }
@@ -68,26 +72,10 @@ export function RoomsPanel() {
     try {
       await api.post(`/api/rooms/${room.id}/join`, undefined, { token });
       await refreshMine();
-      setSelectedRoom(room);
+      onSelectRoom(room);
     } catch (err) {
       setError(err instanceof ApiError ? t(`errors:${err.code}` as never) : t("errors:UNKNOWN_ERROR" as never));
     }
-  }
-
-  if (selectedRoom) {
-    // Member counts (and, later, unread state) can have changed while the
-    // user was in the chat — e.g. someone else joined — so refresh the
-    // list behind the scenes instead of showing it stale on return.
-    return (
-      <ChatRoom
-        room={selectedRoom}
-        onBack={() => {
-          setSelectedRoom(null);
-          void refreshMine();
-          if (tab === "lobby") void refreshLobby();
-        }}
-      />
-    );
   }
 
   return (
@@ -103,28 +91,31 @@ export function RoomsPanel() {
 
       <form onSubmit={handleCreate} className="create-room-form">
         <input placeholder={t("name_placeholder")} value={name} onChange={(e) => setName(e.target.value)} required />
-        <button type="submit" className="icon-button" title={t("create")}>
+        <button type="submit" className="icon-button primary round" title={t("create")}>
           <Icon name="add" />
         </button>
       </form>
       {error && <p className="form-error">{error}</p>}
 
       {tab === "mine" && (
-        <>
-          <div className="buddy-group-header">
-            {t("my_rooms")} ({myRooms.length})
-          </div>
-          <ul className="room-list">
-            {myRooms.map((room) => (
-              <li key={room.id} className="classic-row" onClick={() => setSelectedRoom(room)}>
-                <span className="room-dot" style={{ background: CATEGORY_DOT_COLOR[room.category] }} />
-                <span className="room-name">{room.name}</span>
-                <span className="room-count">{room.memberCount ?? 0}</span>
-              </li>
-            ))}
-            {myRooms.length === 0 && <li className="empty-state">{t("no_rooms")}</li>}
-          </ul>
-        </>
+        <ul className="chat-list">
+          {myRooms.map((room) => (
+            <li
+              key={room.id}
+              className={`chat-list-row${room.id === selectedRoomId ? " selected" : ""}`}
+              onClick={() => onSelectRoom(room)}
+            >
+              <Avatar name={room.name} size={38} />
+              <div className="chat-list-info">
+                <div className="chat-list-line">
+                  <span className="chat-list-name">{room.name}</span>
+                </div>
+                <div className="chat-list-preview">{previewText(room, t) ?? t("no_messages_yet")}</div>
+              </div>
+            </li>
+          ))}
+          {myRooms.length === 0 && <li className="empty-state">{t("no_rooms")}</li>}
+        </ul>
       )}
 
       {tab === "lobby" && (
@@ -137,13 +128,13 @@ export function RoomsPanel() {
               </option>
             ))}
           </select>
-          <ul className="room-list">
+          <ul className="chat-list">
             {publicRooms.map((room) => (
-              <li key={room.id} className="classic-row">
-                <span className="room-dot" style={{ background: CATEGORY_DOT_COLOR[room.category] }} />
-                <div className="room-info">
-                  <span className="room-name">{room.name}</span>
-                  <span className="room-meta">
+              <li key={room.id} className="chat-list-row">
+                <Avatar name={room.name} size={38} />
+                <div className="chat-list-info">
+                  <span className="chat-list-name">{room.name}</span>
+                  <span className="chat-list-preview">
                     {t(`category.${room.category}`)} · {t("member_count", { count: room.memberCount ?? 0 })}
                   </span>
                 </div>

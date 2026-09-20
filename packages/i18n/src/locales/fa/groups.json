@@ -14,6 +14,7 @@
   "all_categories": "همه دسته‌ها",
   "name_placeholder": "نام اتاق",
   "no_rooms": "هنوز اتاقی وجود ندارد.",
+  "no_messages_yet": "هنوز پیامی ارسال نشده",
   "member_count.one": "{count} عضو",
   "member_count.other": "{count} عضو",
   "category.general": "عمومی",

@@ -6,6 +6,7 @@ import { useCall } from "../call/CallContext.js";
 import { api, ApiError } from "../api/client.js";
 import type { Friend, FriendRequest } from "../api/types.js";
 import { PresenceDot } from "./PresenceDot.js";
+import { Avatar } from "./Avatar.js";
 import { Icon } from "./Icon.js";
 
 export function BuddyList() {
@@ -89,6 +90,7 @@ export function BuddyList() {
           <ul className="friend-requests">
             {requests.map((r) => (
               <li key={r.id}>
+                <Avatar name={r.requester.username} size={28} />
                 <span>{r.requester.username}</span>
                 <button type="button" className="icon-button accept" onClick={() => handleAccept(r.id)} title={t("accept")}>
                   <Icon name="check" />
@@ -102,45 +104,48 @@ export function BuddyList() {
         </section>
       )}
 
-      <div className="buddy-group-header">
-        {t("title")} ({friendsWithLivePresence.length})
-      </div>
-      <ul className="buddy-entries">
+      <ul className="chat-list">
         {friendsWithLivePresence.map((f) => (
-          <li key={f.friendshipId} className="buddy-entry classic-row">
-            <PresenceDot state={f.presence} />
-            <div className="buddy-info">
-              <span className="buddy-name">{f.username}</span>
-              {f.statusMessage && <span className="buddy-status">{f.statusMessage}</span>}
+          <li key={f.friendshipId} className="chat-list-row">
+            <span className="avatar-badge">
+              <Avatar name={f.username} size={38} />
+              <span className="badge-dot">
+                <PresenceDot state={f.presence} />
+              </span>
+            </span>
+            <div className="chat-list-info">
+              <span className="chat-list-name">{f.username}</span>
+              <span className="chat-list-preview">{f.statusMessage || t(`presence.${f.presence}`)}</span>
             </div>
-            <span className="buddy-presence-label">{t(`presence.${f.presence}`)}</span>
-            <button
-              type="button"
-              className="nudge-button"
-              disabled={f.presence === "offline" || callState !== "idle"}
-              onClick={() => handleCall(f.id, f.username, false)}
-              title={t("calls:voice_call")}
-            >
-              <Icon name="phone" />
-            </button>
-            <button
-              type="button"
-              className="nudge-button"
-              disabled={f.presence === "offline" || callState !== "idle"}
-              onClick={() => handleCall(f.id, f.username, true)}
-              title={t("calls:video_call")}
-            >
-              <Icon name="video" />
-            </button>
-            <button
-              type="button"
-              className="nudge-button"
-              disabled={f.presence === "offline"}
-              onClick={() => handleNudge(f.id)}
-              title={t("nudge")}
-            >
-              <Icon name="bell" />
-            </button>
+            <div className="chat-list-actions">
+              <button
+                type="button"
+                className="nudge-button"
+                disabled={f.presence === "offline" || callState !== "idle"}
+                onClick={() => handleCall(f.id, f.username, false)}
+                title={t("calls:voice_call")}
+              >
+                <Icon name="phone" />
+              </button>
+              <button
+                type="button"
+                className="nudge-button"
+                disabled={f.presence === "offline" || callState !== "idle"}
+                onClick={() => handleCall(f.id, f.username, true)}
+                title={t("calls:video_call")}
+              >
+                <Icon name="video" />
+              </button>
+              <button
+                type="button"
+                className="nudge-button"
+                disabled={f.presence === "offline"}
+                onClick={() => handleNudge(f.id)}
+                title={t("nudge")}
+              >
+                <Icon name="bell" />
+              </button>
+            </div>
           </li>
         ))}
         {friendsWithLivePresence.length === 0 && <li className="empty-state">{t("empty")}</li>}

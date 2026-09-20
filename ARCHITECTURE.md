@@ -96,24 +96,30 @@ apps/frontend     React + Vite web client.
   nudge button), `PresenceDot`, `NudgeToast` (a self-dismissing toast with a
   brief shake animation — the spiritual descendant of the classic
   window-shake buzz).
-- `src/styles.css`: light "Classic Mode" visual system — a modernized skin
-  of a classic desktop messenger window (gradient title bar with decorative
-  window controls, a menu bar, a light lavender/white palette) — an
-  original design, not a copy of any product's actual logo or brand
-  assets. Went through three visual iterations in this session: PHASE 4's
-  violet theme (too plain per user feedback) → a dark glassmorphism/neon
-  theme (the user's next explicit choice) → this light classic-window skin
-  (the user's final explicit choice, matching a reference image of a
-  Yahoo-Messenger-style "Classic Mode" window they shared). `App.tsx`'s
-  `.title-bar`/`.menu-bar` are decorative chrome only (no real window
-  behavior — a stylistic homage, not a functional claim). Vazirmatn
-  (Persian) + Inter (Latin) loaded via Google Fonts in `index.html`.
+- `src/styles.css`: dark "Modern Mode" 3D visual system — a three-pane
+  workspace (icon rail / list pane / content pane) with glossy avatars
+  (`.avatar::before` radial-gradient highlight + layered `box-shadow` for
+  depth) and a blue→cyan accent gradient with a neon glow — an original
+  design, not a copy of any product's actual logo or brand assets. Went
+  through several visual iterations in this session: PHASE 4's violet theme
+  (too plain per user feedback) → a dark glassmorphism/neon theme → a light
+  "Classic Mode" skin matching a reference image's left-hand panel → this
+  PHASE 7 dark 3D "Modern Mode" skin, matching the same reference image's
+  right-hand panel and a user-approved standalone mockup built with
+  Claude's Artifact "Design canvas" tool before being implemented here (a
+  deliberate process change to get sign-off on a static mockup instead of
+  iterating on the real app blind). Vazirmatn (Persian) + Inter (Latin)
+  loaded via Google Fonts in `index.html`.
+- `src/components/IconRail.tsx` (PHASE 7): the workspace's leftmost nav
+  column. Deliberately limited to the two real destinations that exist
+  (chats, contacts) plus a decorative logo — no icons for unbuilt features.
+- `src/components/WelcomeHero.tsx` (PHASE 7): the content pane's empty
+  state, shown when no room is selected.
 - `src/components/Avatar.tsx`: an initials avatar with a deterministic
-  per-username gradient (no image upload exists yet — see
-  `RISK_REGISTER.md`). Used for the viewer's own profile row and per-sender
-  in chat messages; deliberately **not** used in the buddy/room lists,
-  which use an inline status dot instead (`PresenceDot`/`.room-dot`) to
-  match the reference image's classic buddy-list look.
+  per-username gradient and a glossy 3D highlight (no image upload exists
+  yet — see `RISK_REGISTER.md`). Used throughout the chat list, buddy list,
+  and chat messages, each with a `PresenceDot`/status badge overlay where
+  relevant.
 - `src/components/Icon.tsx`: a small hand-picked set of inline SVG icons
   (phone, video, bell, send, logout, back, check, close, add) — not an
   icon-font dependency, keeping bundle size down. Replaced emoji buttons
@@ -188,6 +194,13 @@ surfaced bugs that had been sitting undetected since earlier phases:
    toast text missing the name. Fixed by capturing the departing peer's
    username into a separate `lastPeerUsername` state inside `cleanup()`
    itself, read instead of `peer` for post-call messages.
+5. (PHASE 7) `RoomsPanel.tsx`'s chat-list row fell back to
+   `t("no_rooms")` ("no rooms exist yet") as its empty last-message preview
+   text — semantically wrong for a room that exists but simply has no
+   messages yet. Caught reviewing a live screenshot of the new three-pane
+   layout, not by code review. Fixed by adding a dedicated
+   `groups.no_messages_yet` key (fa+en) and using it as the fallback
+   instead.
 
 ## Realtime media (voice/video, Paltalk-style rooms)
 
