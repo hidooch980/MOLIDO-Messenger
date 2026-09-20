@@ -18,13 +18,27 @@ function readStoredLocale(): string | null {
   }
 }
 
-// Statically bundling fa+en keeps PHASE 0 simple; section 33 (lazy loading /
-// locale chunking) applies once more locales are enabled and this list grows.
-async function loadBundle(locale: LocaleCode): Promise<Record<string, Record<string, string>>> {
-  const entries = await Promise.all(
-    LOCALE_NAMESPACES.map(async (ns) => [ns, (await import(`@molido/i18n/locales/${locale}/${ns}.json`)).default] as const)
-  );
-  return Object.fromEntries(entries);
+// A dynamic `import(`@molido/i18n/locales/${locale}/${ns}.json`)` looks
+// natural but Vite's dev server (unlike its Rollup-based production build,
+// which happened to inline it) can't resolve a subpath-export pattern from
+// a runtime template literal — it 404s only in `npm run dev`, not
+// `vite build`. `import.meta.glob` is Vite's documented, dev-and-build-safe
+// way to import a whole directory of files matching a pattern.
+const localeModules = import.meta.glob<{ default: Record<string, string> }>(
+  "../../../../packages/i18n/src/locales/*/*.json",
+  { eager: true }
+);
+
+const ALL_BUNDLES: Record<string, Record<string, Record<string, string>>> = {};
+for (const [path, mod] of Object.entries(localeModules)) {
+  const match = /locales\/([^/]+)\/([^/]+)\.json$/.exec(path);
+  if (!match) continue;
+  const [, locale, namespace] = match;
+  (ALL_BUNDLES[locale] ??= {})[namespace] = mod.default;
+}
+
+function bundleFor(locale: LocaleCode): Record<string, Record<string, string>> {
+  return ALL_BUNDLES[locale] ?? {};
 }
 
 /** Must be awaited once, before the app renders (see `main.tsx`). */
@@ -35,9 +49,7 @@ export async function initI18n(): Promise<LocaleCode> {
     deviceOrBrowserLocales: navigator.languages,
   }) as LocaleCode;
 
-  const resources = Object.fromEntries(
-    await Promise.all(ENABLED_LOCALES.map(async (locale) => [locale, await loadBundle(locale)] as const))
-  );
+  const resources = Object.fromEntries(ENABLED_LOCALES.map((locale) => [locale, bundleFor(locale)]));
 
   await i18n.use(initReactI18next).init({
     resources,
@@ -45,7 +57,10 @@ export async function initI18n(): Promise<LocaleCode> {
     fallbackLng: "en",
     ns: LOCALE_NAMESPACES,
     defaultNS: "common",
-    interpolation: { escapeValue: false },
+    // packages/i18n's own Translator (core/translate.ts, used server-side)
+    // interpolates `{var}`, not i18next's default `{{var}}` — every JSON
+    // bundle is written once for both consumers, so i18next must match it.
+    interpolation: { escapeValue: false, prefix: "{", suffix: "}" },
   });
 
   applyDocumentDirection(initialLocale);
@@ -54,8 +69,7 @@ export async function initI18n(): Promise<LocaleCode> {
 
 export async function changeLocale(locale: LocaleCode): Promise<void> {
   if (!i18n.hasResourceBundle(locale, "common")) {
-    const bundle = await loadBundle(locale);
-    for (const [ns, resource] of Object.entries(bundle)) {
+    for (const [ns, resource] of Object.entries(bundleFor(locale))) {
       i18n.addResourceBundle(locale, ns, resource);
     }
   }

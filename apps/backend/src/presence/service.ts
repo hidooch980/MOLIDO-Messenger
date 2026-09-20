@@ -1,18 +1,7 @@
+import type { ManualPresenceState, PresenceState } from "@molido/i18n";
 import { redis } from "./redis.js";
 
-/**
- * Manual states a connected user can set themselves (Yahoo Messenger's
- * Online/Away/Busy). "offline" is never stored — it's derived from having
- * zero active socket connections. Rendered client-side via
- * `friends.presence.<state>`, never a hardcoded string.
- */
-export const MANUAL_PRESENCE_STATES = ["online", "away", "busy"] as const;
-export type ManualPresenceState = (typeof MANUAL_PRESENCE_STATES)[number];
-export type PresenceState = ManualPresenceState | "offline";
-
-export function isManualPresenceState(value: string): value is ManualPresenceState {
-  return (MANUAL_PRESENCE_STATES as readonly string[]).includes(value);
-}
+export { MANUAL_PRESENCE_STATES, isManualPresenceState, type ManualPresenceState, type PresenceState } from "@molido/i18n";
 
 function socketsKey(userId: string) {
   return `presence:sockets:${userId}`;

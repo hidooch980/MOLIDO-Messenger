@@ -1,17 +1,39 @@
 import { useTranslation } from "react-i18next";
+import { AuthProvider, useAuth } from "./auth/AuthContext.js";
+import { SocketProvider } from "./socket/SocketContext.js";
 import { LanguageSwitcher } from "./components/LanguageSwitcher.js";
+import { LoginForm } from "./components/LoginForm.js";
+import { StatusBar } from "./components/StatusBar.js";
+import { BuddyList } from "./components/BuddyList.js";
+import { NudgeToast } from "./components/NudgeToast.js";
 
-export default function App() {
-  const { t } = useTranslation(["common", "chat"]);
+function MainShell() {
+  const { t } = useTranslation("common");
 
   return (
-    <main style={{ maxWidth: 480, marginInline: "auto", paddingInline: "1rem" }}>
-      <h1>{t("common:app_name")}</h1>
-      <LanguageSwitcher />
-      <p style={{ marginBlockStart: "1rem" }}>
-        <input placeholder={t("chat:message_placeholder")} style={{ width: "100%" }} />
-      </p>
-      <button>{t("chat:send")}</button>
-    </main>
+    <div className="app-shell">
+      <header className="app-header">
+        <h1>{t("app_name")}</h1>
+        <LanguageSwitcher />
+      </header>
+      <StatusBar />
+      <BuddyList />
+      <NudgeToast />
+    </div>
+  );
+}
+
+function AppContent() {
+  const { token } = useAuth();
+  return token ? <MainShell /> : <LoginForm />;
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <SocketProvider>
+        <AppContent />
+      </SocketProvider>
+    </AuthProvider>
   );
 }

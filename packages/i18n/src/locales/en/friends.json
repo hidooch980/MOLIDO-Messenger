@@ -10,6 +10,7 @@
   "nudge": "Send a nudge",
   "nudge_received": "{name} sent you a nudge!",
   "status_placeholder": "Set a status message",
+  "empty": "No friends yet — add one above.",
   "presence.online": "Online",
   "presence.away": "Away",
   "presence.busy": "Busy",

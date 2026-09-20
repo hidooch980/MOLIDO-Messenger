@@ -1,8 +1,8 @@
 # Architecture
 
-Status: PHASE 3 — rooms, buddy list, and live presence are functional
-end-to-end against local dev PostgreSQL + Redis. Nothing below is deployed
-to a real environment.
+Status: PHASE 4 — the buddy list, presence, and nudge now have a working
+frontend UI, verified in a real browser, on top of local dev PostgreSQL +
+Redis. Nothing below is deployed to a real environment.
 
 ## Overview
 
@@ -74,9 +74,46 @@ apps/frontend     React + Vite web client.
 ## Frontend (`apps/frontend`)
 
 - React 18 + Vite, `i18next`/`react-i18next` wired to `@molido/i18n`'s locale
-  registry and namespace bundles.
+  registry and namespace bundles via `import.meta.glob` (not a dynamic
+  subpath-export `import()` — see the PHASE 4 bug note below).
 - `applyDocumentDirection()` keeps `<html lang dir>` in sync with the active
   locale on boot and on every language switch.
+- `src/auth/AuthContext.tsx`: login/register/logout, persists `{token, user}`
+  to `localStorage`, applies the account's `localePreference` on login.
+- `src/socket/SocketContext.tsx`: owns the one Socket.IO connection for the
+  session (connects once a token exists, disconnects on logout), tracks live
+  `presence:update` overrides and the most recent `friend:nudge` in React
+  state so any component can react to them without its own listener.
+- `src/components`: `LoginForm`, `StatusBar` (presence selector + status
+  message), `BuddyList` (add friend, incoming requests, presence dots,
+  nudge button), `PresenceDot`, `NudgeToast` (a self-dismissing toast with a
+  brief shake animation — the spiritual descendant of the classic
+  window-shake buzz).
+- `src/styles.css`: a stylistic homage to the era's messenger look (violet
+  gradient title bar, rounded panel, compact buddy rows) — an original
+  design, not a copy of any product's actual logo or brand assets.
+
+### A real bug this UI work found (fixed, not just noted)
+
+Building and *actually loading this in a browser* — not just typechecking —
+surfaced two bugs that had been sitting undetected since PHASE 0/3:
+
+1. `apps/frontend/src/i18n/index.ts` dynamically imported
+   `` `@molido/i18n/locales/${locale}/${ns}.json` ``. Vite's **production**
+   build (`vite build`) happened to resolve this and had been passing since
+   PHASE 0 — but Vite's **dev server** 404s on a subpath-export pattern
+   built from a runtime template literal, so the whole app failed to boot
+   under `npm run dev` specifically. Fixed by switching to
+   `import.meta.glob(...)`, Vite's documented dev-and-build-safe way to
+   import a directory of files by pattern.
+2. `friends.nudge_received`'s `{name}` placeholder rendered as the literal
+   string `{name}` instead of interpolating, because i18next's default
+   delimiter is `{{var}}` while every JSON bundle was written for
+   `packages/i18n`'s own `Translator` (`core/translate.ts`), which uses
+   `{var}`. Fixed by setting i18next's `interpolation.prefix`/`suffix` to
+   `{`/`}` so both consumers of the same JSON files agree on one syntax.
+   A related but not-yet-triggered mismatch (dot-suffix vs. i18next's
+   underscore-suffix pluralization keys) is tracked in `RISK_REGISTER.md`.
 
 ## Realtime media (voice/video, Paltalk-style rooms)
 

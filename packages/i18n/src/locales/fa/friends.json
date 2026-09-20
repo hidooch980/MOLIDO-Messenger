@@ -10,6 +10,7 @@
   "nudge": "ارسال تلنگر",
   "nudge_received": "{name} برای شما تلنگر فرستاد!",
   "status_placeholder": "یک پیام وضعیت تنظیم کنید",
+  "empty": "هنوز دوستی ندارید — از بالا اضافه کنید.",
   "presence.online": "آنلاین",
   "presence.away": "خارج از دسترس",
   "presence.busy": "مشغول",

@@ -1,0 +1,331 @@
+/* A stylistic homage to the late-90s/2000s desktop messenger era —
+   rounded panels, a violet gradient title bar, a compact buddy list —
+   not a copy of any specific product's actual logo or brand assets. */
+
+:root {
+  --molido-violet: #6a3fb5;
+  --molido-violet-dark: #4a2a80;
+  --molido-panel: #f4f1fb;
+  --molido-border: #c9bdea;
+  --molido-online: #2fbf4f;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #e8e3f7;
+  font-family: Tahoma, Verdana, "Segoe UI", "Vazirmatn", sans-serif;
+  font-size: 14px;
+  color: #241c3a;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-block: 32px;
+  padding-inline: 16px;
+}
+
+.app-shell {
+  width: 100%;
+  max-width: 380px;
+  background: #fff;
+  border: 1px solid var(--molido-border);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 6px 24px rgba(74, 42, 128, 0.18);
+}
+
+.app-header {
+  background: linear-gradient(135deg, var(--molido-violet), var(--molido-violet-dark));
+  color: #fff;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.app-header h1 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.app-header select {
+  font-size: 12px;
+}
+
+.status-bar {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--molido-border);
+  background: var(--molido-panel);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.status-identity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.status-message-form {
+  display: flex;
+  gap: 6px;
+}
+
+.status-message-form input {
+  flex: 1;
+}
+
+button.link {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--molido-violet-dark);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+}
+
+.buddy-list {
+  padding: 12px 16px 16px;
+}
+
+.buddy-list h2 {
+  font-size: 14px;
+  margin: 0 0 8px;
+  color: var(--molido-violet-dark);
+}
+
+.add-friend-form {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.add-friend-form input {
+  flex: 1;
+}
+
+.form-notice {
+  font-size: 12px;
+  color: var(--molido-violet-dark);
+  margin: 0 0 8px;
+}
+
+.form-error {
+  color: #b3261e;
+  font-size: 12px;
+}
+
+.friend-requests {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.friend-requests li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.friend-requests li span {
+  flex: 1;
+}
+
+.buddy-entries {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.buddy-entry {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.buddy-entry:hover {
+  background: var(--molido-panel);
+}
+
+.buddy-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.buddy-name {
+  font-weight: 600;
+}
+
+.buddy-status {
+  font-size: 11px;
+  color: #6b6280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nudge-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 6px;
+}
+
+.nudge-button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.empty-state {
+  color: #6b6280;
+  font-size: 12px;
+  padding: 8px 0;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 320px;
+  background: #fff;
+  border: 1px solid var(--molido-border);
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 6px 24px rgba(74, 42, 128, 0.18);
+  text-align: center;
+}
+
+.brand-title {
+  color: var(--molido-violet-dark);
+  margin: 0 0 12px;
+}
+
+.auth-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--molido-border);
+  margin-bottom: 12px;
+}
+
+.auth-tabs button {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: #6b6280;
+  border-bottom: 2px solid transparent;
+}
+
+.auth-tabs button.active {
+  color: var(--molido-violet-dark);
+  border-bottom-color: var(--molido-violet);
+  font-weight: 600;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+input,
+select,
+button {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid var(--molido-border);
+  border-radius: 4px;
+}
+
+button {
+  cursor: pointer;
+  background: #fff;
+}
+
+button.primary {
+  background: var(--molido-violet);
+  color: #fff;
+  border-color: var(--molido-violet-dark);
+}
+
+button.secondary {
+  color: #6b6280;
+}
+
+.nudge-toast {
+  position: fixed;
+  bottom: 20px;
+  inset-inline-end: 20px;
+  background: var(--molido-violet-dark);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  font-size: 13px;
+  max-width: 260px;
+}
+
+.nudge-toast.shake {
+  animation: molido-nudge-shake 0.6s ease;
+}
+
+@keyframes molido-nudge-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+  body {
+    background: #1c1626;
+    color: #ece7f7;
+  }
+  .app-shell,
+  .auth-card {
+    background: #241c33;
+    border-color: #4a2a80;
+  }
+  .status-bar {
+    background: #2c2240;
+  }
+  input,
+  select,
+  button {
+    background: #2c2240;
+    color: #ece7f7;
+    border-color: #4a2a80;
+  }
+  button.primary {
+    background: var(--molido-violet);
+  }
+  .buddy-entry:hover {
+    background: #2c2240;
+  }
+}

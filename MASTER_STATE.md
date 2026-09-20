@@ -1,6 +1,6 @@
 # Master State
 
-Last updated: 2026-09-20 (PHASE 3)
+Last updated: 2026-09-20 (PHASE 4)
 
 ## Status legend
 
@@ -44,7 +44,8 @@ VERIFIED / OBSERVED / INFERRED / UNKNOWN / BLOCKED — see project conventions.
 | System join/leave events persisted as codes | VERIFIED (code) | `systemEventCode`/`systemEventName` columns, not a rendered sentence; not yet live-pushed over the socket — see `RISK_REGISTER.md`. |
 | Message edit/delete | NOT STARTED | Schema has the columns; no routes yet. |
 | Public room lobby (Yahoo-style categories) | VERIFIED (live smoke test) | `Room.category`/`Room.isPublic` + `GET /api/rooms/public?category=`. Verified: a public "sports" room appeared filtered and unfiltered; a private room did not appear in either listing; joining the private room by id was rejected with `GROUP_FORBIDDEN`; member count went 1→2 live after a join. Category names translated fa/en via `groups.category.*`. |
-## PHASE 3 — Buddy list, presence, and nudge (Yahoo-nostalgia features) — IN PROGRESS
+
+## PHASE 3 — Buddy list, presence, and nudge (Yahoo-nostalgia features) — LOCKED
 
 | Area | Status | Notes |
 |---|---|---|
@@ -56,35 +57,48 @@ VERIFIED / OBSERVED / INFERRED / UNKNOWN / BLOCKED — see project conventions.
 | Presence service (Redis) | VERIFIED (live smoke test) | `registerConnection`/`removeConnection` via `SADD`/`SREM`/`SCARD` on a per-user socket-id set; "offline" is always derived (empty set), never itself stored, so a crashed process can't strand a user "online". |
 | Live presence broadcast to friends only | VERIFIED (live smoke test) | A connecting/disconnecting/away-setting user's `presence:update` was only ever observed by their accepted friend, via a personal Socket.IO room (`user:<id>`) — not broadcast globally. |
 | Nudge ("buzz") | VERIFIED (live smoke test) | Delivered only between accepted friends (`areFriends()` gate); received live by the target's socket with sender identity. |
-| Avatar/status message UI | NOT STARTED | Backend fields (`PATCH /api/me`) exist; no frontend surface yet. |
 | Redis pub/sub across multiple backend instances | NOT STARTED | A single process is the only one broadcasting today. |
 | Message edit/delete | NOT STARTED | Schema has the columns; no routes yet. |
 | Invite mechanism for private rooms | NOT STARTED | |
-| Classic Yahoo Messenger visual theme | NOT STARTED | Frontend is still an unstyled React shell. |
 | Offline-message "you have new messages" push | NOT STARTED | Messages already persist and are visible on next history fetch — no separate notification exists yet. |
 | WebRTC/SFU (voice/video) | NOT STARTED | Explicitly deferred; see `ARCHITECTURE.md`. |
 | Admin panel | NOT STARTED | |
 | Revenue | NOT STARTED, disabled-by-default is the design intent | `REVENUE_ENABLED=false` present in `.env.example`; no gating logic reads it yet. |
 | Email/push localization pipeline | NOT STARTED | |
 
+## PHASE 4 — Frontend UI for auth, buddy list, presence, and nudge — IN PROGRESS
+
+| Area | Status | Notes |
+|---|---|---|
+| Login/register UI | VERIFIED (live browser test) | Real two-user flow driven through Playwright against the actual `vite` dev server, not just typechecked. |
+| Buddy list UI (add friend, requests, presence dots, nudge) | VERIFIED (live browser test) | Two separate browser contexts: alice added bob via the UI form, bob accepted via the UI, alice's presence dot for bob turned live green (`rgb(47, 191, 79)`, matching the "online" color) after bob's browser connected — read from the actual rendered DOM, not an assumption. |
+| Nudge UI (toast + shake) | VERIFIED (live browser test) | bob clicked the buddy-list nudge button; alice's browser showed the toast with the correctly interpolated Persian text `uibob برای شما تلنگر فرستاد!`. |
+| Classic-messenger visual theme | VERIFIED (code) | `src/styles.css` — violet gradient header, rounded buddy-list panel; an original design, not a copied logo/brand asset. |
+| Status message / presence selector UI | VERIFIED (code) | `StatusBar.tsx`; not exercised by the browser test above (only the buddy-list side was driven). |
+| Two real bugs found and fixed during this UI work | FIXED | (1) The frontend's dynamic locale `import()` 404'd only under `vite dev` (not `vite build`) — fixed with `import.meta.glob`. (2) i18next's default `{{var}}` delimiter didn't match `packages/i18n`'s own `{var}` JSON convention, so `friends.nudge_received`'s `{name}` rendered literally — fixed by configuring i18next's interpolation delimiters. Full detail in `ARCHITECTURE.md`. |
+| Room/chat UI (creating/joining rooms, sending messages) | NOT STARTED | Backend fully verified (PHASE 2); no frontend screen for it yet — this phase focused on the buddy-list/presence/nudge features the user asked to prioritize. |
+| Avatar upload UI | NOT STARTED | `PATCH /api/me` accepts a URL; no upload flow exists on either side. |
+
 ## Regression baseline
 
 fa/RTL and en/LTR: verified via `i18n:validate` (key/placeholder parity,
-now across 10 namespaces including the new `friends` one) plus every PHASE
-1–3 live smoke test above. No automated UI regression suite exists yet
+across 10 namespaces including `friends`) plus every PHASE 1–4 live smoke
+test above — PHASE 4's being the first to run in an actual browser rather
+than via API-only scripts. No automated UI regression suite exists yet
 (tracked in `RISK_REGISTER.md`).
 
-## Immediate next steps (candidate PHASE 4)
+## Immediate next steps (candidate PHASE 5)
 
-1. Build the frontend buddy-list UI (presence dots, status message, nudge
-   button, request inbox) — the backend is fully verified but has no visual
-   surface yet.
-2. Apply a classic-Yahoo-inspired visual theme to the frontend shell.
-3. Push system join/leave events live over the socket, not just on next
+1. Build the room/chat frontend screen (create/browse/join rooms, send/
+   receive messages) — the backend has been fully verified since PHASE 2
+   but still has no visual surface.
+2. Push system join/leave events live over the socket, not just on next
    history fetch.
-4. Add message edit/delete routes using the existing `editedAt`/`deletedAt`
+3. Add message edit/delete routes using the existing `editedAt`/`deletedAt`
    columns and `chat.system.MESSAGE_EDITED`/`MESSAGE_DELETED` keys.
-5. Design an invite mechanism for private rooms.
+4. Design an invite mechanism for private rooms.
+5. Resolve the i18next pluralization-key mismatch (risk 20 in
+   `RISK_REGISTER.md`) before any UI uses a plural string.
 6. Add refresh-token/logout/session-revocation before any production use.
 7. Provision PostgreSQL + Redis for a real deployed environment (still only
    local dev instances) and wire secrets, not committed files.
