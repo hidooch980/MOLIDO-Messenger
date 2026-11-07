@@ -89,8 +89,10 @@ roomsRouter.get("/public", async (req, res, next) => {
 
 roomsRouter.post("/:roomId/join", async (req, res, next) => {
   try {
-    const room = await joinRoom(req.params.roomId, req.auth!.sub);
-    await announceSystemEvent(room.id, "GROUP_MEMBER_JOINED", req.auth!.username);
+    const result = await joinRoom(req.params.roomId, req.auth!.sub);
+    if (result.joined) {
+      await announceSystemEvent(result.room.id, "GROUP_MEMBER_JOINED", req.auth!.username);
+    }
     res.status(204).end();
   } catch (err) {
     next(err);
