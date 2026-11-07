@@ -1,0 +1,29 @@
+name: Temporary dependency lock refresh
+
+on:
+  push:
+    branches: [fix/ci-prisma-client-generation]
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Refresh compatible dependency resolutions
+        run: npm audit fix
+      - name: Report remaining advisories
+        run: npm audit --json > audit.json || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: refreshed-lock-and-audit
+          path: |
+            package-lock.json
+            audit.json
