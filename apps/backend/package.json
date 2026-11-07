@@ -10,7 +10,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
-    "prebuild": "prisma generate --schema prisma/schema.prisma"
+    "prebuild": "prisma generate --schema prisma/schema.prisma",
+    "test": "tsx --test test/**/*.test.ts"
   },
   "dependencies": {
     "@molido/i18n": "*",
