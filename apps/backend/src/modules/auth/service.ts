@@ -10,7 +10,9 @@ const TOKEN_TTL = "7d";
 
 function jwtSecret(): string {
   const secret = process.env.JWT_SECRET;
-  if (!secret) throw new Error("JWT_SECRET is not set");
+  if (!secret || secret.length < 32 || secret === "change-me-in-every-environment") {
+    throw new Error("JWT_SECRET must be a unique secret of at least 32 characters");
+  }
   return secret;
 }
 

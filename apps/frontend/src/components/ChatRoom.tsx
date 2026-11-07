@@ -30,25 +30,41 @@ export function ChatRoom({ room, onBack }: ChatRoomProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
   const listRef = useRef<HTMLUListElement>(null);
+  const pendingMessageIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadHistoryAndJoin() {
-      const history = await api.get<ChatMessage[]>(`/api/rooms/${room.id}/messages`, { token });
-      if (cancelled) return;
-      setMessages([...history].reverse());
-
-      socket?.emit("chat:join", room.id, (error?: string) => {
-        if (error && !cancelled) setJoinError(error);
+    function loadHistoryAndJoin() {
+      socket?.emit("chat:join", room.id, async (error?: string) => {
+        if (cancelled) return;
+        if (error) {
+          setJoinError(error);
+          return;
+        }
+        try {
+          const history = await api.get<ChatMessage[]>(`/api/rooms/${room.id}/messages`, { token });
+          if (cancelled) return;
+          // Merge instead of replacing: live events can arrive while history is loading.
+          setMessages((previous) => {
+            const merged = new Map([...history].reverse().map((message) => [message.id, message]));
+            previous.forEach((message) => merged.set(message.id, message));
+            return [...merged.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+          });
+          setJoinError(null);
+        } catch (error) {
+          if (!cancelled) setJoinError(error instanceof ApiError ? error.code : "NETWORK_ERROR");
+        }
       });
     }
 
-    void loadHistoryAndJoin();
+    const onConnect = () => loadHistoryAndJoin();
+    socket?.on("connect", onConnect);
+    if (socket?.connected) onConnect();
 
     function handleIncoming(message: ChatMessage) {
       if (message.roomId !== room.id) return;
-      setMessages((prev) => [...prev, message]);
+      setMessages((prev) => prev.some((item) => item.id === message.id) ? prev : [...prev, message]);
     }
 
     function handleUpdated(update: MessageUpdate) {
@@ -62,6 +78,7 @@ export function ChatRoom({ room, onBack }: ChatRoomProps) {
     socket?.on("chat:message:updated", handleUpdated);
     return () => {
       cancelled = true;
+      socket?.off("connect", onConnect);
       socket?.off("chat:message", handleIncoming);
       socket?.off("chat:message:updated", handleUpdated);
     };
@@ -74,10 +91,23 @@ export function ChatRoom({ room, onBack }: ChatRoomProps) {
   function handleSend(e: FormEvent) {
     e.preventDefault();
     if (!draft.trim()) return;
-    socket?.emit("chat:message", { roomId: room.id, body: draft }, (error?: string) => {
-      if (error) setJoinError(error);
+    if (!socket) {
+      setJoinError("CONNECTION_UNAVAILABLE");
+      return;
+    }
+    const body = draft;
+    const clientMessageId = pendingMessageIdRef.current ?? crypto.randomUUID();
+    pendingMessageIdRef.current = clientMessageId;
+    socket.emit("chat:message", { roomId: room.id, body, clientMessageId }, (error?: string) => {
+      if (error) {
+        setJoinError(error);
+        return;
+      }
+      // Keep the draft until the server confirms durable persistence.
+      pendingMessageIdRef.current = null;
+      setDraft((current) => current === body ? "" : current);
+      setJoinError(null);
     });
-    setDraft("");
   }
 
   function startEdit(message: ChatMessage) {
@@ -168,7 +198,7 @@ export function ChatRoom({ room, onBack }: ChatRoomProps) {
         })}
       </ul>
       <form onSubmit={handleSend} className="chat-input-form">
-        <input placeholder={t("message_placeholder")} value={draft} onChange={(e) => setDraft(e.target.value)} />
+        <input placeholder={t("message_placeholder")} value={draft} onChange={(e) => { pendingMessageIdRef.current = null; setDraft(e.target.value); }} />
         <button type="submit" className="icon-button primary" title={t("send")}>
           <Icon name="send" />
         </button>

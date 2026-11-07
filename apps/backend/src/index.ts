@@ -19,7 +19,15 @@ import { allowRate } from "./realtime/rate-limit.js";
 
 const app = express();
 app.use(helmet());
-app.use(cors());
+if (process.env.NODE_ENV === "production" && !process.env.CORS_ORIGINS) {
+  throw new Error("CORS_ORIGINS must be configured in production");
+}
+const allowedOrigins = (process.env.CORS_ORIGINS ?? "http://localhost:5173,http://127.0.0.1:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 app.use(localeMiddleware());
 
@@ -48,7 +56,7 @@ app.use("/api/me", profileRouter);
 app.use(localizedErrorHandler());
 
 const httpServer = createServer(app);
-const io = new SocketIOServer(httpServer, { cors: { origin: "*" } });
+const io = new SocketIOServer(httpServer, { cors: { origin: allowedOrigins } });
 setIO(io);
 
 // Every realtime connection must present the same JWT the REST API uses —
@@ -176,7 +184,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("chat:message", async (payload: { roomId: string; body: string }, ack?: (error?: string) => void) => {
+  socket.on("chat:message", async (payload: { roomId: string; body: string; clientMessageId?: string }, ack?: (error?: string, message?: unknown) => void) => {
     if (!allowRate(auth.sub, "chat:message", 15, 10_000)) {
       ack?.("RATE_LIMITED");
       return;
@@ -188,16 +196,18 @@ io.on("connection", (socket) => {
       return;
     }
     try {
-      const message = await postMessage(payload.roomId, auth.sub, parsed.data.body);
-      io.to(payload.roomId).emit("chat:message", {
+      const message = await postMessage(payload.roomId, auth.sub, parsed.data.body, parsed.data.clientMessageId);
+      const delivered = {
         id: message.id,
         roomId: message.roomId,
         senderId: message.senderId,
         senderUsername: auth.username,
         body: message.body,
         createdAt: message.createdAt.toISOString(),
-      });
-      ack?.();
+      };
+      io.to(payload.roomId).emit("chat:message", delivered);
+      // The acknowledgement means the message is durably stored, not merely received by this socket.
+      ack?.(undefined, delivered);
     } catch (err) {
       ack?.(err instanceof LocalizedError ? err.code : "UNKNOWN_ERROR");
     }

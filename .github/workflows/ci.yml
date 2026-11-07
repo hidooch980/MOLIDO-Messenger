@@ -25,8 +25,22 @@ jobs:
       - run: npm run i18n:validate
 
   build:
-    name: Build all workspaces
+    name: Build and PostgreSQL integration tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: molido_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d molido_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     needs: i18n-validate
     timeout-minutes: 15
     steps:
@@ -41,9 +55,17 @@ jobs:
         env:
           DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/molido_ci
         run: npx prisma validate --schema prisma/schema.prisma
+      - name: Apply database migrations
+        working-directory: apps/backend
+        env:
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/molido_ci
+        run: npx prisma migrate deploy --schema prisma/schema.prisma
       - name: Build all workspaces
         run: npm run build
-      - name: Run backend unit tests
+      - name: Run backend unit and PostgreSQL integration tests
+        env:
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/molido_ci
+          JWT_SECRET: ci-only-secret-at-least-32-characters-long
         run: npm test
 
   security-audit:
