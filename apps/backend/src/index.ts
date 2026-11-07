@@ -9,7 +9,7 @@ import { localizedErrorHandler } from "./i18n/error-handler.js";
 import { authRouter } from "./modules/auth/routes.js";
 import { roomsRouter } from "./modules/rooms/routes.js";
 import { friendsRouter, profileRouter } from "./modules/friends/routes.js";
-import { verifyToken, type AuthTokenPayload } from "./modules/auth/service.js";
+import { verifyToken, assertJwtSecretConfigured, type AuthTokenPayload } from "./modules/auth/service.js";
 import { requireMembership, postMessage } from "./modules/rooms/service.js";
 import { sendMessageSchema } from "./modules/rooms/schemas.js";
 import { listFriendUserIds, areFriends } from "./modules/friends/service.js";
@@ -215,6 +215,9 @@ io.on("connection", (socket) => {
 });
 
 const port = Number(process.env.PORT ?? 4000);
+// Fail fast instead of starting a seemingly healthy API that cannot issue or
+// verify sessions because its signing secret is missing or copied from .env.example.
+assertJwtSecretConfigured();
 httpServer.listen(port, () => {
   console.log(`MOLIDO backend listening on :${port}`);
 });

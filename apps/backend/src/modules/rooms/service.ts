@@ -67,14 +67,23 @@ export async function joinRoom(roomId: string, userId: string) {
   if (!room) throw new LocalizedError("GROUP_NOT_FOUND");
 
   const existing = await prisma.roomMember.findUnique({ where: { roomId_userId: { roomId, userId } } });
-  if (existing) return room;
+  if (existing) return { room, joined: false };
 
   // A private room can only be joined by invite (not modeled yet — see
   // RISK_REGISTER.md); joining by ID alone is a public-lobby-only path.
   if (!room.isPublic) throw new LocalizedError("GROUP_FORBIDDEN");
 
-  await prisma.roomMember.create({ data: { roomId, userId, role: "member" } });
-  return room;
+  try {
+    await prisma.roomMember.create({ data: { roomId, userId, role: "member" } });
+    return { room, joined: true };
+  } catch (error) {
+    // Two join requests can race. Treat the unique-key winner as the only
+    // actual join so the caller does not broadcast duplicate system events.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return { room, joined: false };
+    }
+    throw error;
+  }
 }
 
 export async function leaveRoom(roomId: string, userId: string) {

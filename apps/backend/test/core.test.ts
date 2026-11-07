@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { isJwtSecretStrong } from "../src/modules/auth/service.js";
 
 import { registerSchema, loginSchema } from "../src/modules/auth/schemas.js";
 import {
@@ -11,6 +12,14 @@ import {
 } from "../src/modules/rooms/schemas.js";
 import { sendFriendRequestSchema, updateProfileSchema } from "../src/modules/friends/schemas.js";
 import { allowRate } from "../src/realtime/rate-limit.js";
+
+test("JWT secret validation rejects missing, weak, and example secrets", () => {
+  assert.equal(isJwtSecretStrong(undefined), false);
+  assert.equal(isJwtSecretStrong("short"), false);
+  assert.equal(isJwtSecretStrong("replace-with-a-unique-random-secret-of-at-least-32-characters"), false);
+  assert.equal(isJwtSecretStrong("change-me-in-every-environment"), false);
+  assert.equal(isJwtSecretStrong("a-random-production-secret-with-more-than-32-characters"), true);
+});
 
 test("registration accepts valid input and rejects unsafe or incomplete values", () => {
   assert.equal(registerSchema.safeParse({
