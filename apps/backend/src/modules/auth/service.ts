@@ -8,12 +8,27 @@ import type { RegisterInput, LoginInput } from "./schemas.js";
 const BCRYPT_ROUNDS = 12;
 const TOKEN_TTL = "7d";
 
+export function isJwtSecretStrong(secret: string | undefined): boolean {
+  if (!secret || secret.length < 32) return false;
+  const normalized = secret.trim().toLowerCase();
+  if (
+    normalized === "change-me-in-every-environment" ||
+    normalized === "replace-with-a-unique-random-secret-of-at-least-32-characters" ||
+    /^(replace|change|your)[-_ ]/.test(normalized)
+  ) return false;
+  return true;
+}
+
 function jwtSecret(): string {
   const secret = process.env.JWT_SECRET;
-  if (!secret || secret.length < 32 || secret === "change-me-in-every-environment") {
-    throw new Error("JWT_SECRET must be a unique secret of at least 32 characters");
+  if (!isJwtSecretStrong(secret)) {
+    throw new Error("JWT_SECRET must be a unique, non-placeholder secret of at least 32 characters");
   }
-  return secret;
+  return secret!;
+}
+
+export function assertJwtSecretConfigured(): void {
+  jwtSecret();
 }
 
 export interface AuthTokenPayload {
