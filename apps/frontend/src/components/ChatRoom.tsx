@@ -35,17 +35,30 @@ export function ChatRoom({ room, onBack }: ChatRoomProps) {
   useEffect(() => {
     let cancelled = false;
 
-    async function loadHistoryAndJoin() {
-      const history = await api.get<ChatMessage[]>(`/api/rooms/${room.id}/messages`, { token });
-      if (cancelled) return;
-      setMessages([...history].reverse());
-
-      socket?.emit("chat:join", room.id, (error?: string) => {
-        if (error && !cancelled) setJoinError(error);
+    function loadHistoryAndJoin() {
+      socket?.emit("chat:join", room.id, async (error?: string) => {
+        if (cancelled) return;
+        if (error) {
+          setJoinError(error);
+          return;
+        }
+        try {
+          const history = await api.get<ChatMessage[]>(`/api/rooms/${room.id}/messages`, { token });
+          if (cancelled) return;
+          // Merge instead of replacing: live events can arrive while history is loading.
+          setMessages((previous) => {
+            const merged = new Map([...history].reverse().map((message) => [message.id, message]));
+            previous.forEach((message) => merged.set(message.id, message));
+            return [...merged.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+          });
+          setJoinError(null);
+        } catch (error) {
+          if (!cancelled) setJoinError(error instanceof ApiError ? error.code : "NETWORK_ERROR");
+        }
       });
     }
 
-    const onConnect = () => { void loadHistoryAndJoin(); };
+    const onConnect = () => loadHistoryAndJoin();
     socket?.on("connect", onConnect);
     if (socket?.connected) onConnect();
 
