@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 
 import { registerSchema, loginSchema } from "../src/modules/auth/schemas.js";
 import {
@@ -41,6 +42,8 @@ test("room creation enforces name and description bounds", () => {
 
 test("message schemas enforce the 1..4000 character contract", () => {
   assert.equal(sendMessageSchema.safeParse({ body: "hello" }).success, true);
+  assert.equal(sendMessageSchema.safeParse({ body: "hello", clientMessageId: randomUUID() }).success, true);
+  assert.equal(sendMessageSchema.safeParse({ body: "hello", clientMessageId: "not-a-uuid" }).success, false);
   assert.equal(editMessageSchema.safeParse({ body: "edited" }).success, true);
   assert.equal(sendMessageSchema.safeParse({ body: "" }).success, false);
   assert.equal(sendMessageSchema.safeParse({ body: "x".repeat(4001) }).success, false);
