@@ -43,6 +43,8 @@ jobs:
         run: npx prisma validate --schema prisma/schema.prisma
       - name: Build all workspaces
         run: npm run build
+      - name: Run backend unit tests
+        run: npm test
 
   security-audit:
     name: Dependency security audit
