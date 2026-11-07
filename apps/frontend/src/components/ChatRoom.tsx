@@ -44,11 +44,13 @@ export function ChatRoom({ room, onBack }: ChatRoomProps) {
       });
     }
 
-    void loadHistoryAndJoin();
+    const onConnect = () => { void loadHistoryAndJoin(); };
+    socket?.on("connect", onConnect);
+    if (socket?.connected) onConnect();
 
     function handleIncoming(message: ChatMessage) {
       if (message.roomId !== room.id) return;
-      setMessages((prev) => [...prev, message]);
+      setMessages((prev) => prev.some((item) => item.id === message.id) ? prev : [...prev, message]);
     }
 
     function handleUpdated(update: MessageUpdate) {
@@ -62,6 +64,7 @@ export function ChatRoom({ room, onBack }: ChatRoomProps) {
     socket?.on("chat:message:updated", handleUpdated);
     return () => {
       cancelled = true;
+      socket?.off("connect", onConnect);
       socket?.off("chat:message", handleIncoming);
       socket?.off("chat:message:updated", handleUpdated);
     };
@@ -74,10 +77,21 @@ export function ChatRoom({ room, onBack }: ChatRoomProps) {
   function handleSend(e: FormEvent) {
     e.preventDefault();
     if (!draft.trim()) return;
-    socket?.emit("chat:message", { roomId: room.id, body: draft }, (error?: string) => {
-      if (error) setJoinError(error);
+    if (!socket) {
+      setJoinError("CONNECTION_UNAVAILABLE");
+      return;
+    }
+    const body = draft;
+    const clientMessageId = crypto.randomUUID();
+    socket.emit("chat:message", { roomId: room.id, body, clientMessageId }, (error?: string) => {
+      if (error) {
+        setJoinError(error);
+        return;
+      }
+      // Keep the draft until the server confirms durable persistence.
+      setDraft((current) => current === body ? "" : current);
+      setJoinError(null);
     });
-    setDraft("");
   }
 
   function startEdit(message: ChatMessage) {
