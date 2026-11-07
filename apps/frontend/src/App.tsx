@@ -24,21 +24,31 @@ function MainShell() {
 
   return (
     <div className="app-shell workspace">
-      <IconRail view={view} onChange={handleViewChange} />
-      <div className="list-pane">
-        <StatusBar />
-        {view === "chats" ? (
-          <RoomsPanel selectedRoomId={selectedRoom?.id ?? null} onSelectRoom={setSelectedRoom} />
-        ) : (
-          <BuddyList />
-        )}
-      </div>
-      <div className="content-pane">
-        {view === "chats" && selectedRoom ? (
-          <ChatRoom room={selectedRoom} onBack={() => setSelectedRoom(null)} />
-        ) : (
-          <WelcomeHero />
-        )}
+      <header className="classic-titlebar">
+        <span className="classic-brand-mark" aria-hidden="true">M</span>
+        <div className="classic-brand-copy">
+          <strong>MOLIDO Messenger</strong>
+          <span>Instant messages · Friends · Chat rooms</span>
+        </div>
+        <span className="classic-titlebar-status"><i /> Connected workspace</span>
+      </header>
+      <div className="workspace-body">
+        <IconRail view={view} onChange={handleViewChange} />
+        <div className="list-pane">
+          <StatusBar />
+          {view === "chats" ? (
+            <RoomsPanel selectedRoomId={selectedRoom?.id ?? null} onSelectRoom={setSelectedRoom} />
+          ) : (
+            <BuddyList />
+          )}
+        </div>
+        <div className="content-pane">
+          {view === "chats" && selectedRoom ? (
+            <ChatRoom room={selectedRoom} onBack={() => setSelectedRoom(null)} />
+          ) : (
+            <WelcomeHero />
+          )}
+        </div>
       </div>
       <NudgeToast />
       <CallOverlay />
