@@ -19,7 +19,7 @@ import { allowRate } from "./realtime/rate-limit.js";
 
 const app = express();
 app.use(helmet());
-app.use(cors());
+const allowedOrigins = (process.env.CORS_ORIGINS ?? "http://localhost:5173,http://127.0.0.1:5173")\n  .split(",")\n  .map((origin) => origin.trim())\n  .filter(Boolean);\n\napp.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 app.use(localeMiddleware());
 
@@ -48,7 +48,7 @@ app.use("/api/me", profileRouter);
 app.use(localizedErrorHandler());
 
 const httpServer = createServer(app);
-const io = new SocketIOServer(httpServer, { cors: { origin: "*" } });
+const io = new SocketIOServer(httpServer, { cors: { origin: allowedOrigins } });
 setIO(io);
 
 // Every realtime connection must present the same JWT the REST API uses —
