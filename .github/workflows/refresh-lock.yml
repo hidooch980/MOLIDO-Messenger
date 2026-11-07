@@ -10,20 +10,32 @@ permissions:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
-      - name: Refresh compatible dependency resolutions
+      - name: Apply non-breaking security updates
         run: npm audit fix
-      - name: Report remaining advisories
-        run: npm audit --json > audit.json || true
+        continue-on-error: true
+      - name: Upgrade vulnerable direct dependencies to patched major versions
+        run: |
+          npm install --workspace=@molido/backend zod@^4.6.6 --save
+          npm install --workspace=@molido/frontend vite@^6.4.4 --save-dev
+      - name: Clean install and compile
+        run: |
+          npm ci
+          npm run build
+      - name: Verify security audit
+        run: npm audit --audit-level=high
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: refreshed-lock-and-audit
+          name: refreshed-dependencies
           path: |
+            package.json
             package-lock.json
-            audit.json
+            apps/backend/package.json
+            apps/frontend/package.json
