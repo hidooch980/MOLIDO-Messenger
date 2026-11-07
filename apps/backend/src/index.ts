@@ -19,7 +19,12 @@ import { allowRate } from "./realtime/rate-limit.js";
 
 const app = express();
 app.use(helmet());
-const allowedOrigins = (process.env.CORS_ORIGINS ?? "http://localhost:5173,http://127.0.0.1:5173")\n  .split(",")\n  .map((origin) => origin.trim())\n  .filter(Boolean);\n\napp.use(cors({ origin: allowedOrigins }));
+const allowedOrigins = (process.env.CORS_ORIGINS ?? "http://localhost:5173,http://127.0.0.1:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 app.use(localeMiddleware());
 
