@@ -1,4 +1,5 @@
 import { LocalizedError, type SystemEventCode } from "@molido/i18n";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../db/prisma.js";
 import type { CreateRoomInput, HistoryQueryInput, PublicRoomsQueryInput } from "./schemas.js";
 
@@ -81,14 +82,37 @@ export async function leaveRoom(roomId: string, userId: string) {
   await prisma.roomMember.delete({ where: { roomId_userId: { roomId, userId } } });
 }
 
-export async function postMessage(roomId: string, senderId: string, body: string) {
+export async function postMessage(roomId: string, senderId: string, body: string, clientMessageId?: string) {
   await requireMembership(roomId, senderId);
-  const message = await prisma.message.create({
-    data: { roomId, senderId, body },
-    include: { sender: { select: { username: true } } },
-  });
-  await prisma.room.update({ where: { id: roomId }, data: { updatedAt: new Date() } });
-  return message;
+
+  // Socket.IO may buffer and replay an emit after reconnect. A stable
+  // client-generated key makes retries safe across reconnects and processes.
+  if (clientMessageId) {
+    const existing = await prisma.message.findUnique({
+      where: { senderId_clientMessageId: { senderId, clientMessageId } },
+      include: { sender: { select: { username: true } } },
+    });
+    if (existing) return existing;
+  }
+
+  try {
+    const message = await prisma.message.create({
+      data: { roomId, senderId, body, clientMessageId },
+      include: { sender: { select: { username: true } } },
+    });
+    await prisma.room.update({ where: { id: roomId }, data: { updatedAt: new Date() } });
+    return message;
+  } catch (error) {
+    // Concurrent duplicate submissions can race between the lookup and insert.
+    if (clientMessageId && error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const existing = await prisma.message.findUnique({
+        where: { senderId_clientMessageId: { senderId, clientMessageId } },
+        include: { sender: { select: { username: true } } },
+      });
+      if (existing) return existing;
+    }
+    throw error;
+  }
 }
 
 async function requireOwnEditableMessage(roomId: string, messageId: string, userId: string) {
