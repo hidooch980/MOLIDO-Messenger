@@ -14,5 +14,6 @@
   "presence.online": "Online",
   "presence.away": "Away",
   "presence.busy": "Busy",
+  "presence.invisible": "Appear offline",
   "presence.offline": "Offline"
 }

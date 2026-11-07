@@ -41,7 +41,8 @@ export async function setManualState(userId: string, state: ManualPresenceState)
 export async function getState(userId: string): Promise<PresenceState> {
   const connected = (await redis.scard(socketsKey(userId))) > 0;
   if (!connected) return "offline";
-  return ((await redis.get(stateKey(userId))) as ManualPresenceState | null) ?? "online";
+  const state = ((await redis.get(stateKey(userId))) as ManualPresenceState | null) ?? "online";
+  return state === "invisible" ? "offline" : state;
 }
 
 export async function getStates(userIds: string[]): Promise<Record<string, PresenceState>> {
@@ -61,7 +62,8 @@ export async function getStates(userIds: string[]): Promise<Record<string, Prese
     if (count === 0) {
       result[id] = "offline";
     } else {
-      result[id] = (states[i]?.[1] as ManualPresenceState | null) ?? "online";
+      const state = (states[i]?.[1] as ManualPresenceState | null) ?? "online";
+      result[id] = state === "invisible" ? "offline" : state;
     }
   });
   return result;

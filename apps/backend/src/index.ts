@@ -107,7 +107,8 @@ io.on("connection", (socket) => {
       return;
     }
     await setManualState(auth.sub, state);
-    await broadcastPresence(io, auth.sub, state);
+    // Invisible is a private self-setting: friends see the user as offline.
+    await broadcastPresence(io, auth.sub, state === "invisible" ? "offline" : state);
     ack?.();
   });
 

@@ -12,6 +12,7 @@ import {
 } from "../src/modules/rooms/schemas.js";
 import { sendFriendRequestSchema, updateProfileSchema } from "../src/modules/friends/schemas.js";
 import { allowRate } from "../src/realtime/rate-limit.js";
+import { isManualPresenceState, MANUAL_PRESENCE_STATES } from "@molido/i18n";
 
 test("JWT secret validation rejects missing, weak, and example secrets", () => {
   assert.equal(isJwtSecretStrong(undefined), false);
@@ -79,4 +80,11 @@ test("socket rate limiter enforces per-user, per-event fixed windows", () => {
   assert.equal(allowRate(user, "test-event", 2, 60_000), true);
   assert.equal(allowRate(user, "test-event", 2, 60_000), false);
   assert.equal(allowRate(user, "other-event", 2, 60_000), true);
+});
+
+test("presence supports Invisible as a private manual state", () => {
+  assert.deepEqual(MANUAL_PRESENCE_STATES, ["online", "away", "busy", "invisible"]);
+  assert.equal(isManualPresenceState("invisible"), true);
+  assert.equal(isManualPresenceState("offline"), false);
+  assert.equal(isManualPresenceState("hidden"), false);
 });
