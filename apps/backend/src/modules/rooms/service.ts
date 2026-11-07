@@ -92,7 +92,10 @@ export async function postMessage(roomId: string, senderId: string, body: string
       where: { senderId_clientMessageId: { senderId, clientMessageId } },
       include: { sender: { select: { username: true } } },
     });
-    if (existing) return existing;
+    if (existing) {
+      if (existing.roomId !== roomId || existing.body !== body) throw new LocalizedError("VALIDATION_FAILED");
+      return existing;
+    }
   }
 
   try {
@@ -109,7 +112,10 @@ export async function postMessage(roomId: string, senderId: string, body: string
         where: { senderId_clientMessageId: { senderId, clientMessageId } },
         include: { sender: { select: { username: true } } },
       });
-      if (existing) return existing;
+      if (existing) {
+        if (existing.roomId !== roomId || existing.body !== body) throw new LocalizedError("VALIDATION_FAILED");
+        return existing;
+      }
     }
     throw error;
   }
