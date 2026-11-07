@@ -5,14 +5,17 @@ on:
     branches: [fix/ci-prisma-client-generation]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   refresh:
+    if: github.ref == 'refs/heads/fix/ci-prisma-client-generation'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -24,18 +27,17 @@ jobs:
         run: |
           npm install --workspace=@molido/backend zod@^4.6.6 --save
           npm install --workspace=@molido/frontend vite@^6.4.4 --save-dev
-      - name: Clean install and compile
+      - name: Clean install, compile and audit
         run: |
           npm ci
           npm run build
-      - name: Verify security audit
-        run: npm audit --audit-level=high
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: refreshed-dependencies
-          path: |
-            package.json
-            package-lock.json
-            apps/backend/package.json
-            apps/frontend/package.json
+          npm audit --audit-level=high
+      - name: Commit verified dependency updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json apps/backend/package.json apps/frontend/package.json
+          if ! git diff --cached --quiet; then
+            git commit -m "fix(deps): patch audited dependency vulnerabilities"
+            git push origin HEAD:fix/ci-prisma-client-generation
+          fi
