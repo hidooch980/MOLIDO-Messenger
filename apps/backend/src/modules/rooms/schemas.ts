@@ -14,6 +14,7 @@ export const publicRoomsQuerySchema = z.object({
 
 export const sendMessageSchema = z.object({
   body: z.string().min(1).max(4000),
+  clientMessageId: z.string().uuid().optional(),
 });
 
 export const editMessageSchema = z.object({
