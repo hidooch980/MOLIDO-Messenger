@@ -19,6 +19,9 @@ import { allowRate } from "./realtime/rate-limit.js";
 
 const app = express();
 app.use(helmet());
+if (process.env.NODE_ENV === "production" && !process.env.CORS_ORIGINS) {
+  throw new Error("CORS_ORIGINS must be configured in production");
+}
 const allowedOrigins = (process.env.CORS_ORIGINS ?? "http://localhost:5173,http://127.0.0.1:5173")
   .split(",")
   .map((origin) => origin.trim())
