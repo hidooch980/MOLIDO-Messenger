@@ -22,7 +22,14 @@ test("PostgreSQL persists room messages and enforces membership and ownership", 
     const room = await createRoom(user.id, { name: "Integration room", isPublic: false });
     roomId = room.id;
 
-    const created = await postMessage(room.id, user.id, "persisted integration message");
+    const clientMessageId = randomUUID();
+    const created = await postMessage(room.id, user.id, "persisted integration message", clientMessageId);
+    const retried = await postMessage(room.id, user.id, "persisted integration message", clientMessageId);
+    assert.equal(retried.id, created.id, "retry must return the original persisted message");
+    await assert.rejects(
+      () => postMessage(room.id, user.id, "different content", clientMessageId),
+      (error: unknown) => error instanceof LocalizedError && error.code === "VALIDATION_FAILED",
+    );
     assert.equal(created.body, "persisted integration message");
     assert.equal(created.senderId, user.id);
 
