@@ -30,6 +30,7 @@ export function ChatRoom({ room, onBack }: ChatRoomProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
   const listRef = useRef<HTMLUListElement>(null);
+  const pendingMessageIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -82,13 +83,15 @@ export function ChatRoom({ room, onBack }: ChatRoomProps) {
       return;
     }
     const body = draft;
-    const clientMessageId = crypto.randomUUID();
+    const clientMessageId = pendingMessageIdRef.current ?? crypto.randomUUID();
+    pendingMessageIdRef.current = clientMessageId;
     socket.emit("chat:message", { roomId: room.id, body, clientMessageId }, (error?: string) => {
       if (error) {
         setJoinError(error);
         return;
       }
       // Keep the draft until the server confirms durable persistence.
+      pendingMessageIdRef.current = null;
       setDraft((current) => current === body ? "" : current);
       setJoinError(null);
     });
@@ -182,7 +185,7 @@ export function ChatRoom({ room, onBack }: ChatRoomProps) {
         })}
       </ul>
       <form onSubmit={handleSend} className="chat-input-form">
-        <input placeholder={t("message_placeholder")} value={draft} onChange={(e) => setDraft(e.target.value)} />
+        <input placeholder={t("message_placeholder")} value={draft} onChange={(e) => { pendingMessageIdRef.current = null; setDraft(e.target.value); }} />
         <button type="submit" className="icon-button primary" title={t("send")}>
           <Icon name="send" />
         </button>
