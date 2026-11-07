@@ -181,7 +181,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("chat:message", async (payload: { roomId: string; body: string }, ack?: (error?: string) => void) => {
+  socket.on("chat:message", async (payload: { roomId: string; body: string; clientMessageId?: string }, ack?: (error?: string, message?: unknown) => void) => {
     if (!allowRate(auth.sub, "chat:message", 15, 10_000)) {
       ack?.("RATE_LIMITED");
       return;
@@ -193,16 +193,18 @@ io.on("connection", (socket) => {
       return;
     }
     try {
-      const message = await postMessage(payload.roomId, auth.sub, parsed.data.body);
-      io.to(payload.roomId).emit("chat:message", {
+      const message = await postMessage(payload.roomId, auth.sub, parsed.data.body, parsed.data.clientMessageId);
+      const delivered = {
         id: message.id,
         roomId: message.roomId,
         senderId: message.senderId,
         senderUsername: auth.username,
         body: message.body,
         createdAt: message.createdAt.toISOString(),
-      });
-      ack?.();
+      };
+      io.to(payload.roomId).emit("chat:message", delivered);
+      // The acknowledgement means the message is durably stored, not merely received by this socket.
+      ack?.(undefined, delivered);
     } catch (err) {
       ack?.(err instanceof LocalizedError ? err.code : "UNKNOWN_ERROR");
     }
